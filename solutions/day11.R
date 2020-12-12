@@ -1,6 +1,6 @@
 library(tidyverse)
 
-input <- read_lines("solutions/day11_sample_input.txt") %>%
+input <- read_lines("solutions/day11_input.txt") %>%
   tibble(x = .) %>%
   mutate(row_index = seq_len(nrow(.))) %>%
   separate_rows(x, sep = "") %>%
@@ -60,24 +60,42 @@ sum(after_step$x, na.rm = TRUE)
 
 # part 2 ------------------------------------------------------------------
 
+library(slider)
+
 do_step <- function(input) {
   input %>%
     mutate(n_n = 0L) %>%
     group_by(row_index) %>%
     arrange(col_index) %>%
-    mutate(n_n = n_n + coalesce(lead(x), 0L) + coalesce(lag(x), 0L)) %>%
+    mutate(
+      n_n = n_n + 
+           slider::slide_int(x, ~last(na.omit(head(.x, -1)), default = 0), .before = Inf) + 
+           slider::slide_int(x, ~first(na.omit(tail(.x, -1)), default = 0), .before = 0, .after = Inf)
+    ) %>%
     ungroup() %>%
     group_by(col_index) %>%
     arrange(row_index) %>%
-    mutate(n_n = n_n + coalesce(lead(x), 0L) + coalesce(lag(x), 0L)) %>%
+    mutate(
+      n_n = n_n + 
+        slider::slide_int(x, ~last(na.omit(head(.x, -1)), default = 0), .before = Inf) + 
+        slider::slide_int(x, ~first(na.omit(tail(.x, -1)), default = 0), .before = 0, .after = Inf)
+    ) %>%
     ungroup() %>%
     group_by(left_diag) %>%
     arrange(col_index) %>%
-    mutate(n_n = n_n + coalesce(lead(x), 0L) + coalesce(lag(x), 0L)) %>%
+    mutate(
+      n_n = n_n + 
+        slider::slide_int(x, ~last(na.omit(head(.x, -1)), default = 0), .before = Inf) + 
+        slider::slide_int(x, ~first(na.omit(tail(.x, -1)), default = 0), .before = 0, .after = Inf)
+    ) %>%
     ungroup() %>%
     group_by(right_diag) %>%
     arrange(col_index) %>%
-    mutate(n_n = n_n + coalesce(lead(x), 0L) + coalesce(lag(x), 0L)) %>%
+    mutate(
+      n_n = n_n + 
+        slider::slide_int(x, ~last(na.omit(head(.x, -1)), default = 0), .before = Inf) + 
+        slider::slide_int(x, ~first(na.omit(tail(.x, -1)), default = 0), .before = 0, .after = Inf)
+    ) %>%
     ungroup() %>%
     mutate(new_seat = case_when(
       is.na(x) ~ x,
