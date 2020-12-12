@@ -15,6 +15,7 @@ input %>%
   filter(direction == 'L' | direction == 'R') %>%
   distinct(amount)
 
+# part 1 ------------------------------------------------------------------
 
 poles <- c('E', 'S', 'W', 'N')
 possible_directions <- c('L', 'R', 'F', poles)
@@ -71,3 +72,49 @@ for (command_index in seq_len(nrow(input))) {
 }
 
 abs(x) + abs(y)
+
+
+# part 2 ------------------------------------------------------------------
+
+rotate_left <- function(coords) {
+  return(list(x = -coords$y, y = coords$x))
+}
+
+rotate_waypoint <- function(direction, amount, x, y) {
+  left_amount <- amount
+  if (direction == 'R') left_amount <- 4 - amount
+  if (left_amount == 1) return(rotate_left(list(x = x, y = y)))
+  if (left_amount == 2) return(rotate_left(rotate_left(list(x = x, y = y))))
+  return(rotate_left(rotate_left(rotate_left(list(x = x, y = y)))))
+}
+
+step_waypoint <- function(direction, amount, x, y) {
+  if (direction == 'F') return()
+  if (direction == 'E') return(list(x = x + amount, y = y))
+  if (direction == 'S') return(list(x = x, y = y - amount))
+  if (direction == 'W') return(list(x = x - amount, y = y))
+  if (direction == 'N') return(list(x = x, y = y + amount))
+  rotate_waypoint(direction, amount, x, y)
+}
+
+ship_x <- 0
+ship_y <- 0
+
+waypoint_x <- 10
+waypoint_y <- 1
+
+for (command_index in seq_len(nrow(input))) {
+  current_direction <- input %>% filter(row_index == command_index) %>% pull(direction)
+  current_amount <- input %>% filter(row_index == command_index) %>% pull(amount)
+  
+  if (current_direction != 'F') {
+    new_waypoint_coords <- step_waypoint(current_direction, current_amount, waypoint_x, waypoint_y)
+    waypoint_x <<- new_waypoint_coords$x
+    waypoint_y <<- new_waypoint_coords$y
+  } else {
+    ship_x <<- ship_x + current_amount * waypoint_x
+    ship_y <<- ship_y + current_amount * waypoint_y
+  }
+}
+
+abs(ship_x) + abs(ship_y)
