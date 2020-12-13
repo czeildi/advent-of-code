@@ -35,25 +35,23 @@ schedules <- tibble(freq = input[2]) %>%
   mutate(target_diff = 1:n() - 1) %>%
   filter(freq != 'x') %>%
   mutate(freq = as.numeric(freq)) %>%
-  mutate(remainder_at_departure = (freq - target_diff) %% freq) %>%
-  arrange(freq)
+  mutate(remainder_at_departure = (freq - target_diff) %% freq)
 
-remainder_of_product <- function(base1, base2, r1, r2) {
-  candidate <- r1
-  while(candidate %% base2 != r2) {
-    candidate <- candidate + base1
+remainder_of_product <- function(x, y) {
+  candidate <- x$r
+  while(candidate %% y$base != y$r) {
+    candidate <- candidate + x$base
   }
   return(candidate)
 }
 
-base1 <- schedules$freq[1]
-r1 <- schedules$remainder_at_departure[1]
+schedules %>%
+  rowwise() %>%
+  mutate(params = list(list('base' = freq, 'r' = remainder_at_departure))) %>%
+  pull(params) %>%
+  reduce(function(x, y){
+    list('base' = x$base * y$base, 'r' = remainder_of_product(x, y))
+  }) %>%
+  `$`('r') %>%
+  sprintf('%.0f', .)
 
-for (row_index in 2:nrow(schedules)) {
-  base2 <- schedules$freq[row_index]
-  r2 <- schedules$remainder_at_departure[row_index]
-  r1 <<- remainder_of_product(base1, base2, r1, r2)
-  base1 <<- base1 * base2
-}
-
-sprintf("%.100f", r1)
