@@ -25,13 +25,6 @@ decimal_to_binary <- function(num) {
   str_pad(result, 36, pad = '0')
 }
 
-mask_value <- function(mask, value) {
-  coalesce(
-    str_split(mask, '') %>% .[[1]] %>% na_if('X'),
-    str_split(value, '') %>% .[[1]]
-  ) %>% str_c(collapse = '')
-}
-
 binary_to_decimal <- function(binary) {
   str_split(binary, '') %>%
     .[[1]] %>%
@@ -40,10 +33,20 @@ binary_to_decimal <- function(binary) {
     sum()
 }
 
+
+# part 1 ------------------------------------------------------------------
+
+mask_value <- function(mask, value) {
+  coalesce(
+    str_split(mask, '') %>% .[[1]] %>% na_if('X'),
+    str_split(value, '') %>% .[[1]]
+  ) %>% str_c(collapse = '')
+}
+
 s <- program %>%
   rowwise() %>%
-  mutate(decimal_value = decimal_to_binary(value)) %>%
-  mutate(masked_value = mask_value(mask, decimal_value)) %>%
+  mutate(binary_value = decimal_to_binary(value)) %>%
+  mutate(masked_value = mask_value(mask, binary_value)) %>%
   mutate(new_value = binary_to_decimal(masked_value)) %>%
   select(place, new_value) %>%
   ungroup() %>%
@@ -56,3 +59,55 @@ s <- program %>%
   sum()
 
 sprintf('%.0f', s)
+
+
+# part 2 ------------------------------------------------------------------
+
+mask_value <- function(mask, value) {
+  coalesce(
+    str_split(mask, '') %>% .[[1]] %>% na_if('0'),
+    str_split(value, '') %>% .[[1]]
+  ) %>% str_c(collapse = '')
+}
+
+program_steps <- program %>%
+  rowwise() %>%
+  mutate(memory_address = mask_value(mask, decimal_to_binary(place))) %>%
+  select(-mask) %>%
+  mutate(n_floating_bit = str_count(memory_address, 'X'))
+
+expand_address <- function(address) {
+  print('expanding...')
+  expanded <- address %>%
+    str_split('') %>%
+    .[[1]] %>%
+    c('', .) %>%
+    reduce(function(prev, current) {
+    current_options <- current
+    if (current == 'X') {
+      current_options <- c('0', '1')
+    }
+    crossing(prev, current_options) %>%
+      mutate(new = paste0(prev, current_options)) %>%
+      pull(new)
+  })
+  tibble(memory_address = address, actual_address = expanded)
+}
+
+sum(2^program_steps$n_floating_bit)
+
+expanded <- map_dfr(program_steps$memory_address, expand_address) %>% distinct()
+
+res <- program_steps %>%
+  left_join(unique(expanded)) %>%
+  mutate(actual_address_decimal = binary_to_decimal(actual_address)) %>%
+  ungroup() %>%
+  mutate(row_n = 1:n()) %>%
+  arrange(desc(row_n)) %>%
+  group_by(actual_address) %>%
+  mutate(nn = 1:n()) %>%
+  filter(nn == 1) %>%
+  pull(value) %>%
+  sum()
+
+sprintf('%.0f', res)
