@@ -1,36 +1,36 @@
 library(tidyverse)
 
-max_len <- 100000
+max_len <- 30000000
 starting_numbers <- c(9, 3, 1, 0, 8, 4)
-numbers <- c(starting_numbers, rep(NA_integer_, max_len))
+latest_indices <- rep(NA_integer_, max_len)
+latest_indices[10] <- 1
+latest_indices[4] <- 2
+latest_indices[2] <- 3
+latest_indices[1] <- 4
+latest_indices[9] <- 5
 
-latest_zero_index <- 4
-next_number <- function(current_index) {
-  last <- numbers[current_index - 1]
-  if (last == 0) {
-    res <- current_index - 1 - latest_zero_index
-    latest_zero_index <<- (current_index - 1)
-    return(res)
-  }
-  indices <- which(numbers == last)
-  if (length(indices) == 1) {
-    return(0)
+do_step <- function(previous_number, current_index) {
+  prev_occurence <- latest_indices[previous_number + 1]
+  if(is.na(prev_occurence)) {
+    res <- 0
   } else {
-    return(rev(indices)[1] - rev(indices)[2])
+    res <- current_index - 1 - prev_occurence
   }
+  latest_indices[previous_number + 1] <<- current_index - 1
+  return(res)
 }
 
-current_index <- 7
+current_index <- length(starting_numbers) + 1
+previous_number <- tail(starting_numbers, 1)
 system.time({
   while(current_index <= max_len) {
-    numbers[current_index] <- next_number(current_index)
+    previous_number <<- do_step(previous_number, current_index)
     current_index <<- current_index + 1
   }
 })
 
-numbers[current_index - 1]
+previous_number
 
-# 10.000 0.4 sec
-# 25.000 2.5 sec
-# 50.000 9 sec
-# 100.000 30sec
+# 10.000 0.01 sec
+# 100.000 0.156sec
+# 1.000.000 1.5sec
