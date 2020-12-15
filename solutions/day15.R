@@ -10,19 +10,19 @@ purrr::iwalk(head(starting_numbers, -1), ~{
 previous_number <- tail(starting_numbers, 1)
 
 ## calculation
-do_step <- function(previous_number, current_index) {
+do_step <- function(previous_number, previous_index) {
   prev_occurence <- latest_indices[previous_number + 1]
-  latest_indices[previous_number + 1] <<- current_index - 1
+  latest_indices[previous_number + 1] <<- previous_index
   if(is.na(prev_occurence)) {
     return(0)
   } else {
-    return(current_index - 1 - prev_occurence)
+    return(previous_index - prev_occurence)
   }
 }
 
 system.time({
-  for (current_index in (length(starting_numbers) + 1):max_len) {
-    previous_number <<- do_step(previous_number, current_index)
+  for (previous_index in length(starting_numbers):(max_len - 1)) {
+    previous_number <<- do_step(previous_number, previous_index)
   }
 })
 
