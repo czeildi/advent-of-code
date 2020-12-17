@@ -41,7 +41,7 @@ do_step <- function(input) {
 }
 
 view_seating <- function(seating) {
-  after_step %>%
+  seating %>%
     select(row_index, col_index, new_seat) %>%
     pivot_wider(id_cols = row_index, names_from = col_index, values_from = new_seat) %>%
     select(-row_index)
