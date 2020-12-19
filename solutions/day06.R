@@ -6,17 +6,15 @@ answers <- tibble(x = read_file("solutions/day06_input.txt")) %>%
 
 # part 1 ------------------------------------------------------------------
 
-answers %>% 
-  mutate(
-  letters = map_int(x, ~{
-    str_replace_all(., "\n", "") %>% 
-      str_split('') %>% 
-      .[[1]] %>% 
-      unique() %>% 
-      length()
-  })
-) %>% summarize(s = sum(letters))
+count_unique_letters <- function(text) {
+  text %>%
+    str_replace_all(., "\n", "") %>%
+    str_split('') %>%
+    .[[1]] %>%
+    n_distinct()
+}
 
+map_int(answers$x, count_unique_letters) %>% sum()
 
 # part 2 ------------------------------------------------------------------
 

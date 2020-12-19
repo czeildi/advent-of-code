@@ -4,7 +4,8 @@ passports <- tibble(x = read_file("solutions/day04_input.txt")) %>%
   separate_rows(x, sep = "\n\n") %>% 
   mutate(y = 1:nrow(.)) %>% 
   separate_rows(x, sep = "[ \n]+") %>% 
-  separate(x, into = c('id', 'value'), sep = ":", extra = "merge")
+  filter(x != "") %>%
+  extract(x, into = c('id', 'value'), regex = "([a-z]+):(.*)")
 
 
 # part 1 ------------------------------------------------------------------
@@ -21,7 +22,7 @@ passports %>%
 
 
 valid <- passports %>%
-  filter(id != 'cid' & id != '') %>% 
+  filter(id != 'cid') %>% 
   pivot_wider(id_cols = y, names_from = id, values_from = value, values_fill = NA) %>% 
   drop_na() %>% 
   filter(byr >= 1920 & byr <= 2002) %>%

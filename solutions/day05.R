@@ -1,10 +1,8 @@
 library(tidyverse)
 
 boarding_passes <- tibble(bp = read_lines("solutions/day05_input.txt")) %>% 
-  mutate(bp = str_replace_all(bp, "F", "0")) %>% 
-  mutate(bp = str_replace_all(bp, "B", "1")) %>% 
-  mutate(bp = str_replace_all(bp, "L", "0")) %>% 
-  mutate(bp = str_replace_all(bp, "R", "1"))
+  mutate(bp = str_replace_all(bp, "F|L", "0")) %>% 
+  mutate(bp = str_replace_all(bp, "B|R", "1"))
 
 # part 1 ------------------------------------------------------------------
 
@@ -18,6 +16,6 @@ seat_ids <- boarding_passes %>%
 
 # part 2 ------------------------------------------------------------------
 
-set_ids %>% 
+seat_ids %>% 
   mutate(lead = lead(seat_id)) %>% 
   filter(seat_id - lead > 1)
