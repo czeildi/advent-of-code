@@ -5,7 +5,7 @@ input <- read_file("solutions/day19_input.txt") %>%
 
 rules <- tibble(x = input[1]) %>%
   separate_rows(x, sep = "\n") %>%
-  extract(x, c('rule_idx', 'rule'), regex = "(\\d): \"?([0-9ab |]+)", convert = TRUE) %>%
+  extract(x, c('rule_idx', 'rule'), regex = "(\\d+): \"?([0-9ab |]+)", convert = TRUE) %>%
   arrange(rule_idx) %>%
   deframe()
 
