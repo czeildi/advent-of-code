@@ -40,4 +40,4 @@ for (current_index in 2:length(res)) {
 }
 
 res[[length(res)]]$ends_with
-sprintf("%.100f",res[[length(res)]]$ends_with)
+sprintf("%.0f",res[[length(res)]]$ends_with)

@@ -39,8 +39,6 @@ while(sum(input[start_index:end_index]) != target_num) {
     end_index <<- end_index + 1
   }
   if (sum(input[start_index:end_index]) != target_num) {
-    print(start_index)
-    print(end_index)
     start_index <<- start_index + 1
     end_index <<- start_index + 1 
   }
