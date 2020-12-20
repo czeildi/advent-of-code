@@ -4,42 +4,33 @@ rules <- tibble(rule = readr::read_lines('solutions/day07_input.txt')) %>%
   mutate(rule = str_replace_all(rule, ' bags\\.?| bag\\.?', '')) %>%
   separate(rule, c('parent', 'children'), sep = " contain ") %>%
   separate_rows(children, sep = ", ") %>%
-  separate(children, into = c('num', 'child_color'), sep = ' ', extra = 'merge')
+  extract(children, into = c('num', 'child_color'), regex = "(no|\\d+) ([a-z ]+)")
 
-rules %>%
-  count(parent)
-
-rules %>%
-  count(child_color)
-
-rules %>% filter(parent == child_color)
-
+assertthat::assert_that(nrow(filter(rules, parent == child_color)) == 0)
 
 # part 1 ------------------------------------------------------------------
 
-rules_at_level <- rules %>%
+parent_children_relationships <- rules %>%
   filter(num != 'no') %>%
-  select(parent, child_color) %>%
-  nest_by(parent) %>%
-  rowwise() %>%
-  mutate(can_contain = ('shiny gold' %in% data$child_color))
+  group_by(parent) %>%
+  summarize(child_colors = list(child_color)) %>%
+  deframe()
 
-can_contain_next_level <- function(rules, can_contain, colors) {
-  if (can_contain == TRUE) return(TRUE)
-  map_lgl(colors, ~{
-    if (! .x %in% pull(rules, parent)) return (FALSE)
-    rules %>% filter(parent == .x) %>% pull(can_contain)
-  }) %>%
+can_contain_color <- function(parent_color, descendant_color = 'shiny gold') {
+  if (parent_color == descendant_color) return(TRUE)
+  direct_children <- parent_children_relationships[[parent_color]]
+  map_lgl(direct_children, m_can_contain_color) %>%
     any()
 }
 
-walk(seq_len(nrow(rules_at_level)), ~{
-  print(.x)
-  rules_at_level <<- rules_at_level %>%
-    rowwise() %>%
-    mutate(can_contain = can_contain_next_level(rules_at_level, can_contain, data$child_color))
-})
+m_can_contain_color <- memoise::memoise(can_contain_color)
 
+rules %>%
+  filter(parent != 'shiny gold') %>%
+  pull(parent) %>%
+  unique() %>%
+  map_lgl(m_can_contain_color) %>%
+  sum()
 
 # part 2 ------------------------------------------------------------------
 
