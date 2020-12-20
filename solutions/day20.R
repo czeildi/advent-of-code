@@ -23,7 +23,9 @@ pixels_to_int <- function(pixels) {
     str_split("") %>% .[[1]] %>%
     as.integer()
   
-  return(c("forward" = sum(bits * 2^(0:9)), "backward" = sum(bits * 2^(9:0))))
+  values = c(sum(bits * 2^(0:9)), sum(bits * 2^(9:0)))
+  
+  return(c("smaller" = min(values), "bigger" = max(values)))
 }
 
 tile_edges <- tiles %>%
@@ -46,12 +48,10 @@ tile_edges <- tiles %>%
   ungroup()
 
 tile_edges %>%
-  unnest_auto(edge_as_int) %>%
-  pivot_longer(c(forward, backward), names_to = "direction", values_to = "edge_as_int") %>%
   add_count(edge_as_int) %>%
   filter(n == 1) %>%
   count(id) %>%
-  filter(n == 4) %>%
+  filter(n == 2) %>%
   pull(id) %>%
   as.numeric() %>%
   reduce(`*`) %>%
