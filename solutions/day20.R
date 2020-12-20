@@ -47,9 +47,7 @@ tile_edges <- tiles %>%
   ) %>%
   mutate(edge_id = as.integer(edge_id)) %>%
   rowwise() %>%
-  mutate(
-    edge_as_int = list(pixels_to_int(edge))
-  ) %>%
+  mutate(edge_as_int = list(pixels_to_int(edge))) %>%
   ungroup() %>%
   add_count(edge_as_int, name = "edge_freq") %>%
   arrange(id, edge_id)
@@ -164,7 +162,6 @@ arrange_tiles <- function(tiles_with_positions) {
     )
 }
 
-# for debug purposes
 visualize_image_part <- function(pixels) {
   pixels %>%
     group_by(x, col) %>%
