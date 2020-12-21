@@ -1,6 +1,6 @@
 library(tidyverse)
 
-input <- read_file("solutions/day20_input.txt")
+input <- read_file("solutions/day20_sample_input.txt")
 
 tiles <- input %>% str_split("\n\n") %>% .[[1]] %>%
   tibble(x = .) %>%
@@ -8,7 +8,6 @@ tiles <- input %>% str_split("\n\n") %>% .[[1]] %>%
   separate_rows(image, sep = "\n") %>%
   group_by(id) %>%
   mutate(row = 1:n()) %>%
-  ungroup() %>%
   separate_rows(image, sep = "") %>%
   rename(pixel = 'image') %>%
   filter(pixel != "") %>%
@@ -19,18 +18,6 @@ tiles <- input %>% str_split("\n\n") %>% .[[1]] %>%
 tile_width <- max(tiles$row)
 
 # part 1 ------------------------------------------------------------------
-
-pixels_to_int <- function(pixels) {
-  bits <- pixels %>%
-    str_replace_all("[#]", "1") %>%
-    str_replace_all("[.]", "0") %>%
-    str_split("") %>% .[[1]] %>%
-    as.integer()
-  
-  values = c(sum(bits * 2^(0:(tile_width - 1))), sum(bits * 2^((tile_width - 1):0)))
-  
-  return(c("smaller" = min(values), "bigger" = max(values)))
-}
 
 tile_edges <- tiles %>%
   group_by(id) %>%
@@ -46,11 +33,8 @@ tile_edges <- tiles %>%
     values_to = "edge", names_to = "edge_id"
   ) %>%
   mutate(edge_id = as.integer(edge_id)) %>%
-  rowwise() %>%
-  mutate(edge_as_int = list(pixels_to_int(edge))) %>%
-  ungroup() %>%
-  add_count(edge_as_int, name = "edge_freq") %>%
-  arrange(id, edge_id)
+  mutate(edge_value = pmin(edge, stringi::stri_reverse(edge))) %>%
+  add_count(edge_value, name = "edge_freq")
 
 corner_ids <- tile_edges %>%
   filter(edge_freq == 1) %>%
@@ -75,18 +59,18 @@ next_left_matched_edge <- function(tile_coords, tile_edges, tile_x, tile_y) {
   left_tile_to_match <- filter(tile_coords, x == tile_x - 1 & y == tile_y)
   left_edge_to_match <- tile_edges %>%
     filter(id == left_tile_to_match$id & edge_id == left_tile_to_match$right_edge_id) %>%
-    select(edge_as_int)
+    select(edge_value)
   left_matched_edge <- tile_edges %>%
-    inner_join(left_edge_to_match, by = "edge_as_int", copy = TRUE) %>%
+    inner_join(left_edge_to_match, by = "edge_value", copy = TRUE) %>%
     anti_join(tile_coords, by = "id")
 }
 next_top_matched_edge <- function(tile_coords, tile_edges, tile_x, tile_y) {
   top_tile_to_match <- filter(tile_coords, x == tile_x & y == tile_y - 1)
   top_edge_to_match <- tile_edges %>%
     filter(id == top_tile_to_match$id & edge_id == top_tile_to_match$bottom_edge_id) %>%
-    select(edge_as_int)
+    select(edge_value)
   top_matched_edge <- tile_edges %>%
-    inner_join(top_edge_to_match, by = "edge_as_int", copy = TRUE) %>%
+    inner_join(top_edge_to_match, by = "edge_value", copy = TRUE) %>%
     anti_join(tile_coords, by = "id")
 }
 
