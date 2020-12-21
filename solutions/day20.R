@@ -1,6 +1,7 @@
 library(tidyverse)
+library(zeallot)
 
-input <- read_file("solutions/day20_sample_input.txt")
+input <- read_file("solutions/day20_input.txt")
 
 tiles <- input %>% str_split("\n\n") %>% .[[1]] %>%
   tibble(x = .) %>%
@@ -55,27 +56,23 @@ monster <- read_lines("solutions/day20_monster.txt") %>%
   str_replace_all(' ', '.')
 n_monster_hashmark <- str_count(monster, "#") %>% sum()
 
-next_left_matched_edge <- function(tile_coords, tile_edges, tile_x, tile_y) {
-  left_tile_to_match <- filter(tile_coords, x == tile_x - 1 & y == tile_y)
-  left_edge_to_match <- tile_edges %>%
-    filter(id == left_tile_to_match$id & edge_id == left_tile_to_match$right_edge_id) %>%
+next_matched_edge <- function(tile_coords, tile_edges, tile_x, tile_y, direction) {
+  if (direction == 'left') {
+    params <- list(x_diff = -1, y_diff = 0, edge_name = "right_edge_id")
+  } else {
+    params <- list(x_diff = 0, y_diff = -1, edge_name = "bottom_edge_id")
+  }
+  tile_to_match <- filter(tile_coords, x == tile_x +params$x_diff & y == tile_y + params$y_diff)
+  edge_to_match <- tile_edges %>%
+    filter(id == tile_to_match$id & edge_id == tile_to_match[[params$edge_name]]) %>%
     select(edge_value)
-  left_matched_edge <- tile_edges %>%
-    inner_join(left_edge_to_match, by = "edge_value", copy = TRUE) %>%
-    anti_join(tile_coords, by = "id")
-}
-next_top_matched_edge <- function(tile_coords, tile_edges, tile_x, tile_y) {
-  top_tile_to_match <- filter(tile_coords, x == tile_x & y == tile_y - 1)
-  top_edge_to_match <- tile_edges %>%
-    filter(id == top_tile_to_match$id & edge_id == top_tile_to_match$bottom_edge_id) %>%
-    select(edge_value)
-  top_matched_edge <- tile_edges %>%
-    inner_join(top_edge_to_match, by = "edge_value", copy = TRUE) %>%
+  tile_edges %>%
+    inner_join(edge_to_match, by = "edge_value", copy = TRUE) %>%
     anti_join(tile_coords, by = "id")
 }
 
 next_tile_in_top_row <- function(tile_coords, tile_edges, tile_x, tile_y) {
-  matched_edge <- next_left_matched_edge(tile_coords, tile_edges, tile_x, tile_y)
+  matched_edge <- next_matched_edge(tile_coords, tile_edges, tile_x, tile_y, "left")
   
   right_edge_id <- (matched_edge$edge_id + 2) %% 4
   top_edge_id <- tile_edges %>%
@@ -83,16 +80,11 @@ next_tile_in_top_row <- function(tile_coords, tile_edges, tile_x, tile_y) {
     pull(edge_id)
   bottom_edge_id <- (top_edge_id + 2) %% 4
   
-  new_tile_coords <- tibble(
-    id = matched_edge$id,
-    x = tile_x,
-    y = tile_y,
-    bottom_edge_id = bottom_edge_id,
-    right_edge_id = right_edge_id
-  )
+  list(id = matched_edge$id, bottom_edge_id = bottom_edge_id, right_edge_id = right_edge_id)
 }
+
 next_tile_in_left_col <- function(tile_coords, tile_edges, tile_x, tile_y) {
-  matched_edge <- next_top_matched_edge(tile_coords, tile_edges, tile_x, tile_y)
+  matched_edge <- next_matched_edge(tile_coords, tile_edges, tile_x, tile_y, "top")
   
   bottom_edge_id <- (matched_edge$edge_id + 2) %% 4
   left_edge_id <- tile_edges %>%
@@ -100,28 +92,17 @@ next_tile_in_left_col <- function(tile_coords, tile_edges, tile_x, tile_y) {
     pull(edge_id)
   right_edge_id <- (left_edge_id + 2) %% 4
   
-  new_tile_coords <- tibble(
-    id = matched_edge$id,
-    x = tile_x,
-    y = tile_y,
-    bottom_edge_id = bottom_edge_id,
-    right_edge_id = right_edge_id
-  )
+  list(id = matched_edge$id, bottom_edge_id = bottom_edge_id, right_edge_id = right_edge_id)
 }
+
 next_tile_general <- function(tile_coords, tile_edges, tile_x, tile_y) {
-  left_matched_edge <- next_left_matched_edge(tile_coords, tile_edges, tile_x, tile_y)
-  top_matched_edge <- next_top_matched_edge(tile_coords, tile_edges, tile_x, tile_y)
+  left_matched_edge <- next_matched_edge(tile_coords, tile_edges, tile_x, tile_y, "left")
+  top_matched_edge <- next_matched_edge(tile_coords, tile_edges, tile_x, tile_y, "top")
   
   right_edge_id <- (left_matched_edge$edge_id + 2) %% 4
   bottom_edge_id <- (top_matched_edge$edge_id + 2) %% 4
   
-  new_tile_coords <- tibble(
-    id = left_matched_edge$id,
-    x = tile_x,
-    y = tile_y,
-    bottom_edge_id = bottom_edge_id,
-    right_edge_id = right_edge_id
-  )
+  list(id = left_matched_edge$id, bottom_edge_id = bottom_edge_id, right_edge_id = right_edge_id)
 }
 
 arrange_tiles <- function(tiles_with_positions) {
@@ -146,7 +127,7 @@ arrange_tiles <- function(tiles_with_positions) {
     )
 }
 
-visualize_image_part <- function(pixels) {
+assemble_image_rows <- function(pixels) {
   pixels %>%
     group_by(x, col) %>%
     arrange(y, -row) %>%
@@ -175,9 +156,10 @@ monster_matches <- function(whole_image, monster) {
       next_row_matches_monster_3 = lead(matches_monster_3)
     ) %>%
     rowwise() %>%
-    mutate(
-      matches_middle = list(intersect(intersect(previous_row_matches_monster_1, matches_monster_2), next_row_matches_monster_3))
-    )
+    mutate(matches_middle = list(reduce(
+      list(previous_row_matches_monster_1, matches_monster_2, next_row_matches_monster_3),
+      intersect
+    )))
 }
 
 determine_tile_coords <- function(selected_top_left_id, initial_tile_right_edge_id, initial_tile_bottom_edge_id) {
@@ -194,14 +176,23 @@ determine_tile_coords <- function(selected_top_left_id, initial_tile_right_edge_
     tile_y <- (tile_id - tile_x) / image_width_in_tiles
     
     if (tile_x != 0 && tile_y == 0) {
-      new_tile_coords <- next_tile_in_top_row(tile_coords, tile_edges, tile_x, tile_y)
+      next_tile <- next_tile_in_top_row(tile_coords, tile_edges, tile_x, tile_y)
     } else if (tile_x == 0) {
-      new_tile_coords <- next_tile_in_left_col(tile_coords, tile_edges, tile_x, tile_y)
+      next_tile <- next_tile_in_left_col(tile_coords, tile_edges, tile_x, tile_y)
     } else {
-      new_tile_coords <- next_tile_general(tile_coords, tile_edges, tile_x, tile_y)
+      next_tile <- next_tile_general(tile_coords, tile_edges, tile_x, tile_y)
     }
     
-    tile_coords <- rbind(tile_coords, new_tile_coords)  
+    tile_coords <- rbind(
+      tile_coords, 
+      tibble(
+        id = next_tile$id,
+        x = tile_x,
+        y = tile_y,
+        bottom_edge_id = next_tile$bottom_edge_id,
+        right_edge_id = next_tile$right_edge_id
+      )
+    )  
   }
   tile_coords
 }
@@ -225,7 +216,7 @@ not_monster_tiles_with_params <- function(selected_top_left_id, initial_tile_rig
   arranged_tiles <- arrange_tiles(tiles_with_positions)
   
   whole_image <- arranged_tiles %>%
-    visualize_image_part() %>%
+    assemble_image_rows() %>%
     ungroup() %>%
     mutate(row_idx = 1:n()) %>%
     select(row_idx, image_row)
