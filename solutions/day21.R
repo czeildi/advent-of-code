@@ -34,8 +34,11 @@ while(nrow(matched_allergenes) < n_allergenes) {
   matched_allergenes <<- rbind(matched_allergenes, newly_matched_allergenes)
 }
 
-matched_allergenes
-
 input %>%
   unnest(ingredients_l) %>%
   anti_join(matched_allergenes, by = c("ingredients_l" = "ingredient"))
+
+matched_allergenes %>%
+  arrange(allergene) %>%
+  pull(ingredient) %>%
+  str_c(collapse = ",")
