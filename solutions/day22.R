@@ -1,59 +1,95 @@
 library(tidyverse)
+library(profvis)
 
-input <- tibble(x = read_file("solutions/day22_input.txt")) %>%
+input <- tibble(x = read_file("day22_input.txt")) %>%
   separate_rows(x, sep = "\n\n") %>%
   filter(x != "") %>%
   mutate(player_idx = 1:n()) %>%
   mutate(x = str_replace_all(x, "Player \\d:", "")) %>%
   separate_rows(x, sep = "\n", convert = TRUE) %>%
-  filter(x != "") %>%
-  group_by(player_idx) %>%
-  mutate(deck_idx = 1:n()) %>% 
-  ungroup() %>%
-  rename(card_value = x)
+  filter(x != "")
 
-cards <- input %>% nest(data = c(card_value, deck_idx))
+cards <- group_by(input, player_idx) %>% summarize(card_values = list(x)) %>% deframe()
+seen_card_dealings <- map(1:20, ~character(1000))
 
-should_game_proceed <- function(cards) {
-  cards %>%
-    rowwise() %>%
-    mutate(has_cards_left = nrow(data) > 0) %>%
-    ungroup() %>%
-    pull(has_cards_left) %>%
-    all()
+# profvis({
+should_game_proceed <- function(cards, game_id, step_id_in_game) {
+  card_dealing_id <- digest::digest(cards)
+  if (card_dealing_id %in% seen_card_dealings[[game_id]]) {
+    print("ending due to repeated dealing")
+    return(list(value = FALSE, type = "instand_end"))
+  }
+  
+  have_cards <- length(cards[[1]]) > 0 && length(cards[[2]]) > 0
+  
+  seen_card_dealings[[game_id]][step_id_in_game] <<- card_dealing_id
+  return(list(value = have_cards, type = "no_cards_left"))
 }
 
-step_cards <- function(cards, is_winner, played_cards) {
-  if (!is_winner) {
-    cards %>%
-      filter(deck_idx != 1) %>%
-      mutate(deck_idx = seq_len(n()))
+should_play_subgame <- function(cards) {
+  map_lgl(cards, ~.[1] <= (length(.) - 1)) %>% all()
+}
+
+player_id_with_top_card <- function(cards) {
+  if (cards[[1]][1] > cards[[2]][1]) return(1)
+  return(2)
+}
+
+apply_winner <- function(cards, winner_id) {
+  if (winner_id == 1) {
+    return(list(
+      c(tail(cards[[1]], -1),cards[[1]][1], cards[[2]][1]),
+      tail(cards[[2]], -1)
+    ))
   } else {
-    cards %>%
-      filter(deck_idx != 1) %>%
-      rbind(tibble(deck_idx = 1, card_value = c(max(played_cards), min(played_cards)))) %>%
-      mutate(deck_idx = seq_len(n()))
+    return(list(
+      tail(cards[[1]], -1),
+      c(tail(cards[[2]], -1),cards[[2]][1], cards[[1]][1])
+    ))
   }
 }
 
-step_idx <- 1
-
-while (should_game_proceed(cards)) {
-  print(step_idx)
-  cards <<- cards %>%
-    rowwise() %>%
-    mutate(top_card = filter(data, deck_idx == 1) %>% pull(card_value)) %>%
-    ungroup () %>%
-    mutate(played_cards = list(top_card)) %>%
-    rowwise() %>%
-    mutate(is_winner = (top_card == max(played_cards))) %>%
-    mutate(data = list(step_cards(data, is_winner, played_cards))) %>%
-    ungroup()
-  step_idx <- step_idx + 1
+play_game <- function(cards, game_id) {
+  print(game_id)
+  current_cards <- cards
+  step_id_in_game <- 1
+  seen_card_dealings[[game_id]] <- character(1000)
+  
+  should_proceed <- should_game_proceed(current_cards, game_id, step_id_in_game)
+  while (should_proceed[['value']]) {
+    # print(glue::glue("Game {game_id} round {step_id_in_game}"))
+    if(should_play_subgame(current_cards)) {
+      cards_for_subgame <- map(current_cards, ~{
+        tail(., -1)[1:(.[1])]
+      })
+      res <- m_play_game(cards_for_subgame, game_id + 1)
+      subgame_winner_id <- res$winner_id
+    } else {
+      subgame_winner_id <- player_id_with_top_card(current_cards)
+    } 
+    current_cards <- apply_winner(current_cards, subgame_winner_id)
+    
+    step_id_in_game <- step_id_in_game + 1
+    should_proceed <- should_game_proceed(current_cards, game_id, step_id_in_game)
+  }
+  if (should_proceed[['type']] == 'instand_end') {
+    list(
+      winner_id = 1,
+      cards = current_cards
+    )
+  } else {
+    list(
+      winner_id = subgame_winner_id,
+      cards = current_cards
+    )
+  }
 }
 
-reduce(cards$data, rbind) %>%
-  ungroup() %>%
-  arrange(desc(deck_idx)) %>%
-  mutate(multiplier = 1:n()) %>%
-  summarize(s = sum(card_value * multiplier))
+m_play_game <- memoise::memoise(play_game)
+
+end_situation <- m_play_game(cards, 1)
+
+winner_deck <- end_situation$cards[[end_situation$winner_id]]
+print(sum(winner_deck * rev(seq_along(winner_deck))))
+
+# })
