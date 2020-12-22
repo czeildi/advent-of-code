@@ -17,7 +17,6 @@ seen_card_dealings <- list()
 
 
 play_game <- function(cards, game_depth) {
-  print(glue::glue("Game {game_depth} level deep"))
   seen_card_dealings[[as.character(game_depth)]] <- character(0)
   round_id <- 1
   
@@ -79,9 +78,7 @@ move_drawn_cards_to_winner_deck <- function(cards, winner_id) {
   }
 }
 
-system.time({
-  end_situation <- play_game(cards, 1)
-})
+end_situation <- play_game(cards, 1)
 
 winner_deck <- end_situation$cards[[end_situation$winner_id]]
 sum(winner_deck * rev(seq_along(winner_deck)))
