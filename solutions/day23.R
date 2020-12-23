@@ -15,7 +15,7 @@ current_cup <- original_nums[1]
 step_destination_cup <- function(cup_label, picked_cups) {
   dest <- cup_label - 1
   if (dest == 0) dest <- max_cup_value
-  if (!dest %in% picked_cups) return(dest)
+  if (dest != picked_cups[1] && dest != picked_cups[2] && dest != picked_cups[3]) return(dest)
   else return(step_destination_cup(dest, picked_cups))
 }
 
@@ -32,18 +32,19 @@ do_one_round <- function(current_cup) {
   cups[current_cup] <- neighbor_4
   cups[destination_cup] <- neighbor_1
   cups[neighbor_3] <- right_neighbor_of_destination_cup
+  
+  neighbor_4
 }
 
 system.time({
   for (round_idx in 1:n_round) {
     if (round_idx %% (n_round / 10) == 0) print(round_idx)
     
-    do_one_round(current_cup)
-    current_cup <- cups[current_cup]
+    current_cup <- do_one_round(current_cup)
   }
 })
 
 cups[1] * cups[cups[1]]
 
 # 10.000 100.000 1.3sec
-# 10.000 1.000.000 13sec
+# 10.000 1.000.000 12.5sec
