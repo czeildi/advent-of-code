@@ -1,52 +1,49 @@
 library(tidyverse)
-library(profvis)
 
-input <- "853192647"
-test_input <- "389125467"
+input <- "853192647" # test input: "389125467"
 original_nums <- as.integer(str_split(input, "")[[1]])
 max_cup_value <- 1000000
 n_round <- 10000000
 
-cup_values <- c(original_nums, seq(10, length.out = max_cup_value - 10 + 1))
-cups <- tibble(cup = cup_values) %>% 
+cups_cw_neighbor <- tibble(cup = c(original_nums, seq(10, length.out = max_cup_value - 10 + 1))) %>% 
   mutate(right_cup = lead(cup, default = original_nums[1])) %>%
   arrange(cup) %>%
   pull(right_cup)
 
-# profvis({
-current_cup <- original_nums[1]
-
-step_destination_cup <- function(cup_label, picked_cups) {
-  dest <- cup_label - 1
+get_destination_cup <- function(current_cup, picked_cups) {
+  dest <- current_cup - 1
   if (dest == 0) dest <- max_cup_value
-  if (dest != picked_cups[1] && dest != picked_cups[2] && dest != picked_cups[3]) return(dest)
-  else return(step_destination_cup(dest, picked_cups))
+  
+  if (dest == picked_cups[1] || dest == picked_cups[2] || dest == picked_cups[3]) {
+    return(get_destination_cup(dest, picked_cups))
+  }
+  return(dest)
 }
 
 do_one_round <- function(current_cup) {
-  neighbor_1 <- cups[current_cup]
-  neighbor_2 <- cups[neighbor_1]
-  neighbor_3 <- cups[neighbor_2]
-  neighbor_4 <- cups[neighbor_3]
-  picked_cups <- c(neighbor_1, neighbor_2, neighbor_3)
+  cw_neighbor_1 <- cups_cw_neighbor[current_cup]
+  cw_neighbor_2 <- cups_cw_neighbor[cw_neighbor_1]
+  cw_neighbor_3 <- cups_cw_neighbor[cw_neighbor_2]
+  cw_neighbor_4 <- cups_cw_neighbor[cw_neighbor_3]
   
-  destination_cup <- step_destination_cup(current_cup, picked_cups)
+  destination_cup <- get_destination_cup(
+    current_cup,
+    picked_cups = c(cw_neighbor_1, cw_neighbor_2, cw_neighbor_3)
+  )
+  cw_neighbor_1_of_destination_cup <- cups_cw_neighbor[destination_cup]
   
-  cups[current_cup] <<- neighbor_4
-  cups[neighbor_3] <<- cups[destination_cup]
-  cups[destination_cup] <<- neighbor_1
   
-  neighbor_4
+  cups_cw_neighbor[current_cup] <<- cw_neighbor_4
+  cups_cw_neighbor[destination_cup] <<- cw_neighbor_1
+  cups_cw_neighbor[cw_neighbor_3] <<- cw_neighbor_1_of_destination_cup
+  
+  cw_neighbor_4
 }
 
-system.time({
-  for (round_idx in 1:n_round) {
-    if (round_idx %% (n_round / 10) == 0) print(round_idx)
-    current_cup <- do_one_round(current_cup)
-  }
-})
+current_cup <- original_nums[1]
 
-cups[1] * cups[cups[1]]
+for (round_idx in 1:n_round) {
+  current_cup <- do_one_round(current_cup)
+}
 
-# 10.000 100.000 0.3sec
-# 10.000 1.000.000 2.6sec
+cups_cw_neighbor[1] * cups_cw_neighbor[cups_cw_neighbor[1]]
