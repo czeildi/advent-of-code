@@ -3,17 +3,17 @@ library(profvis)
 
 input <- "853192647"
 test_input <- "389125467"
-original_nums <- as.integer(str_split(test_input, "")[[1]])
-max_cup_value <- 10000
-n_round <- 100000
+original_nums <- as.integer(str_split(input, "")[[1]])
+max_cup_value <- 1000000
+n_round <- 10000000
 
-cup_values <- c(original_nums, 10:max_cup_value)
+cup_values <- c(original_nums, seq(10, length.out = max_cup_value - 10 + 1))
 cups <- tibble(cup = cup_values) %>% 
-  mutate(right_cup = lead(cup, default = cup_values[1])) %>%
+  mutate(right_cup = lead(cup, default = original_nums[1])) %>%
   arrange(cup) %>%
   pull(right_cup)
 
-profvis({
+# profvis({
 current_cup <- original_nums[1]
 
 step_destination_cup <- function(cup_label, picked_cups) {
@@ -32,22 +32,21 @@ do_one_round <- function(current_cup) {
   
   destination_cup <- step_destination_cup(current_cup, picked_cups)
   
-  cups[current_cup] <- neighbor_4
-  cups[neighbor_3] <- cups[destination_cup]
-  cups[destination_cup] <- neighbor_1
+  cups[current_cup] <<- neighbor_4
+  cups[neighbor_3] <<- cups[destination_cup]
+  cups[destination_cup] <<- neighbor_1
   
   neighbor_4
 }
 
-# system.time({
+system.time({
   for (round_idx in 1:n_round) {
     if (round_idx %% (n_round / 10) == 0) print(round_idx)
-    
     current_cup <- do_one_round(current_cup)
   }
 })
 
 cups[1] * cups[cups[1]]
 
-# 10.000 100.000 1.3sec
-# 10.000 1.000.000 12.5sec
+# 10.000 100.000 0.3sec
+# 10.000 1.000.000 2.6sec
