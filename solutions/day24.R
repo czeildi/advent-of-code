@@ -35,6 +35,42 @@ tile_directions <- input %>%
 
 tile_directions %>%
   count(target_coords) %>%
-  mutate(is_flipped = n %% 2 == 1) %>%
-  pull(is_flipped) %>%
-  sum()
+  filter(n %% 2 == 1) %>%
+  nrow()
+
+# part 2 ------------------------------------------------------------------
+
+black_tiles <- tile_directions %>%
+  count(target_coords) %>%
+  filter(n %% 2 == 1) %>%
+  select(black_tile_coord = target_coords)
+
+
+do_step <- function(black_tiles) {
+  black_tiles %>%
+    crossing(enframe(coord_diffs, "direction", "coord_diff")) %>%
+    rowwise() %>%
+    mutate(neighbor_coord = list(list(
+      y = black_tile_coord$y + coord_diff$y_diff,
+      z = black_tile_coord$z + coord_diff$z_diff
+    ))) %>%
+    left_join(mutate(black_tiles, is_black = TRUE), by = c('neighbor_coord' = 'black_tile_coord')) %>%
+    replace_na(list(is_black = FALSE)) %>%
+    group_by(neighbor_coord, is_black) %>%
+    summarize(n_black_neighbors = n()) %>%
+    mutate(will_be_black = case_when(
+      is_black && n_black_neighbors >= 1 && n_black_neighbors <= 2 ~ TRUE,
+      !is_black && n_black_neighbors == 2 ~ TRUE,
+      TRUE ~ FALSE
+    )) %>%
+    filter(will_be_black) %>%
+    ungroup() %>%
+    select(black_tile_coord = neighbor_coord)
+}
+
+for (idx in 1:100) {
+  print(idx)
+  black_tiles <- do_step(black_tiles)
+}
+
+black_tiles
