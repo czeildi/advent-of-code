@@ -1,6 +1,6 @@
 library(tidyverse)
 
-numbers <- as.numeric(readr::read_lines("solutions/day01_input.txt"))
+numbers <- as.numeric(readr::read_lines("solutions_2020/day01_input.txt"))
 
 for (x in numbers) {
   for (y in numbers) {

@@ -1,6 +1,6 @@
 library(tidyverse)
 
-jolts <- as.numeric(read_lines("solutions/day10_input.txt")) %>%
+jolts <- as.numeric(read_lines("solutions_2020/day10_input.txt")) %>%
   sort()
 
 

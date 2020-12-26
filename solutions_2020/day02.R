@@ -1,6 +1,6 @@
 library(tidyverse)
 
-input <- readr::read_lines("solutions/day02_input.txt")
+input <- readr::read_lines("solutions_2020/day02_input.txt")
 passwords <- tibble(input = input) %>% 
   separate(input, c("min", "max", "letter", "password"), convert = TRUE) 
 

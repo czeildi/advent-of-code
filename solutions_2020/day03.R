@@ -1,6 +1,6 @@
 library(tidyverse)
 
-trees <- read_lines('solutions/day03_input.txt')
+trees <- read_lines('solutions_2020/day03_input.txt')
 tree_map <- lapply(trees, function(row) {
   str_split(row, '')[[1]] %>%
     map_lgl(~.=='#')

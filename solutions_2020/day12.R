@@ -1,6 +1,6 @@
 library(tidyverse)
 
-input <- tibble(x = read_lines("solutions/day12_input.txt")) %>%
+input <- tibble(x = read_lines("solutions_2020/day12_input.txt")) %>%
   extract(x, into = c('direction', 'amount'), regex = '([A-Z])(\\d+)') %>%
   mutate(amount = case_when(
     direction == 'L' ~ as.numeric(amount) / 90,

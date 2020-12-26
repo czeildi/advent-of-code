@@ -1,6 +1,6 @@
 library(tidyverse)
 
-input <- read_lines('solutions/day13_input.txt')
+input <- read_lines('solutions_2020/day13_input.txt')
 
 
 # part 1 ------------------------------------------------------------------

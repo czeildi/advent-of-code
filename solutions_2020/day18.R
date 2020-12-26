@@ -1,6 +1,6 @@
 library(tidyverse)
 
-input <- read_lines("solutions/day18_input.txt")
+input <- read_lines("solutions_2020/day18_input.txt")
 
 priority_one_calculation_replaced <- function(expression) {
   first_addition <- str_extract(expression, "[0-9]+ [+] [0-9]+")

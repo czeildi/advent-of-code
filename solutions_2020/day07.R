@@ -1,6 +1,6 @@
 library(tidyverse)
 
-rules <- tibble(rule = readr::read_lines('solutions/day07_input.txt')) %>%
+rules <- tibble(rule = readr::read_lines('solutions_2020/day07_input.txt')) %>%
   mutate(rule = str_replace_all(rule, ' bags\\.?| bag\\.?', '')) %>%
   separate(rule, c('parent', 'children'), sep = " contain ") %>%
   separate_rows(children, sep = ", ") %>%

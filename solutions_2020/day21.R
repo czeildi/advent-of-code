@@ -1,6 +1,6 @@
 library(tidyverse)
 
-input <- tibble(x = c(read_lines("solutions/day21_input.txt"))) %>%
+input <- tibble(x = c(read_lines("solutions_2020/day21_input.txt"))) %>%
   mutate(food_id = 1:n()) %>%
   separate(x, into = c("ingredients", "allergenes"), sep = "\\(") %>%
   mutate(allergenes = str_replace_all(allergenes, "contains ", "")) %>%

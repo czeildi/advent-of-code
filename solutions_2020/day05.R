@@ -1,6 +1,6 @@
 library(tidyverse)
 
-boarding_passes <- tibble(bp = read_lines("solutions/day05_input.txt")) %>% 
+boarding_passes <- tibble(bp = read_lines("solutions_2020/day05_input.txt")) %>% 
   mutate(bp = str_replace_all(bp, "F|L", "0")) %>% 
   mutate(bp = str_replace_all(bp, "B|R", "1"))
 

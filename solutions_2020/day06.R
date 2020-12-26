@@ -1,6 +1,6 @@
 library(tidyverse)
 
-answers <- tibble(x = read_file("solutions/day06_input.txt")) %>% 
+answers <- tibble(x = read_file("solutions_2020/day06_input.txt")) %>% 
   separate_rows(x, sep = "\n\n")
 
 

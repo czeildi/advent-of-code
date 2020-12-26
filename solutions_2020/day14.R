@@ -1,6 +1,6 @@
 library(tidyverse)
 
-input <- read_file("solutions/day14_input.txt")
+input <- read_file("solutions_2020/day14_input.txt")
 
 blocks <- input %>% str_split("mask = ") %>% .[[1]] %>% .[. != '']
   

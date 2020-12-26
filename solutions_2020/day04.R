@@ -1,6 +1,6 @@
 library(tidyverse)
 
-passports <- tibble(x = read_file("solutions/day04_input.txt")) %>% 
+passports <- tibble(x = read_file("solutions_2020/day04_input.txt")) %>% 
   separate_rows(x, sep = "\n\n") %>% 
   mutate(y = 1:nrow(.)) %>% 
   separate_rows(x, sep = "[ \n]+") %>% 

@@ -1,6 +1,6 @@
 library(tidyverse)
 
-input <- read_file("solutions/day16_input.txt") %>%
+input <- read_file("solutions_2020/day16_input.txt") %>%
   str_split("\n\n") %>% .[[1]]
 
 rules <- tibble(x = input[1]) %>%

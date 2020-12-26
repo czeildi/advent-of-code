@@ -2,7 +2,7 @@ library(tidyverse)
 
 num_cycle <- 6
 
-input <- read_lines("solutions/day17_input.txt") %>%
+input <- read_lines("solutions_2020/day17_input.txt") %>%
   tibble(cell = .) %>%
   mutate(x = seq_len(nrow(.))) %>%
   separate_rows(cell, sep = "") %>%

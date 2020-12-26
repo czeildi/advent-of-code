@@ -1,7 +1,7 @@
 library(tidyverse)
 library(zeallot)
 
-instructions <- tibble(x = read_lines("solutions/day08_input.txt")) %>%
+instructions <- tibble(x = read_lines("solutions_2020/day08_input.txt")) %>%
   separate(x, c('command', 'num'), convert = TRUE, sep = " ") %>%
   mutate(row_n = 1:n())
 

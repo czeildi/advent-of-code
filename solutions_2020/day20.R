@@ -1,7 +1,7 @@
 library(tidyverse)
 library(zeallot)
 
-input <- read_file("solutions/day20_input.txt")
+input <- read_file("solutions_2020/day20_input.txt")
 
 tiles <- input %>% str_split("\n\n") %>% .[[1]] %>%
   tibble(x = .) %>%
@@ -52,7 +52,7 @@ corner_ids %>%
 # part 2 ------------------------------------------------------------------
 
 image_width_in_tiles <- sqrt(n_distinct(tiles$id))
-monster <- read_lines("solutions/day20_monster.txt") %>%
+monster <- read_lines("solutions_2020/day20_monster.txt") %>%
   str_replace_all(' ', '.')
 n_monster_hashmark <- str_count(monster, "#") %>% sum()
 

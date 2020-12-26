@@ -1,6 +1,6 @@
 library(tidyverse)
 
-input <- tibble(tile = read_lines("solutions/day24_input.txt"))
+input <- tibble(tile = read_lines("solutions_2020/day24_input.txt"))
 
 parse_line <- function(line) {
   if (line == '') return(character(0))

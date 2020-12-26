@@ -1,7 +1,7 @@
 library(profvis)
 library(tidyverse)
 
-input <- tibble(cards = read_file("solutions/day22_input.txt")) %>%
+input <- tibble(cards = read_file("solutions_2020/day22_input.txt")) %>%
   separate_rows(cards, sep = "\n\n") %>%
   mutate(player_idx = 1:n()) %>%
   mutate(cards = str_replace_all(cards, "Player \\d:", "")) %>%
