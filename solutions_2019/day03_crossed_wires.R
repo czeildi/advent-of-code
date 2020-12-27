@@ -26,23 +26,36 @@ visited_coords <- wires %>%
   map(~{
     .x %>% 
       pull(step) %>% 
-      reduce(.init = list(x = 0, y = 0), function(visited, step) {
+      reduce(.init = list(x = 0, y = 0, n_step = 0), function(visited, step) {
         end_x <- tail(visited$x, 1)
         end_y <- tail(visited$y, 1)
         list(
           x = c(visited$x, seq(end_x + step$x_by, length.out = step$distance, by = step$x_by)),
-          y = c(visited$y, seq(end_y + step$y_by, length.out = step$distance, by = step$y_by))
+          y = c(visited$y, seq(end_y + step$y_by, length.out = step$distance, by = step$y_by)),
+          n_step = c(visited$n_step, max(visited$n_step) + 1:step$distance)
         )
       }) %>% 
-      {tibble(x = .$x, y = .$y)}
+      {tibble(x = .$x, y = .$y, n_step = .$n_step)}
   })
 
-inner_join(
+intersections <- inner_join(
   visited_coords[[1]],
   visited_coords[[2]],
   by = c("x", "y")
 ) %>% 
-  filter(x != 0 | y != 0) %>% 
+  filter(x != 0 | y != 0)
+
+
+# part 1 ------------------------------------------------------------------
+
+intersections %>% 
   mutate(manhattan_distance = abs(x) + abs(y)) %>% 
   pull(manhattan_distance) %>% 
+  min()
+
+# part 2 ------------------------------------------------------------------
+
+intersections %>% 
+  mutate(step_distance = n_step.x + n_step.y) %>% 
+  pull(step_distance) %>% 
   min()
