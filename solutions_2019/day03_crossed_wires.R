@@ -5,7 +5,7 @@ input <- read_lines(file = "solutions_2019/day03_input.txt")
 
 step_params <- function(direction, distance) {
   list(
-    n_coords_visited = distance + 1,
+    distance = distance,
     x_by = if_else(direction %in% c("U", "D"), 0, if_else(direction == "R", 1, -1)),
     y_by = if_else(direction %in% c("R", "L"), 0, if_else(direction == "U", 1, -1))
   )
@@ -30,8 +30,8 @@ visited_coords <- wires %>%
         end_x <- tail(visited$x, 1)
         end_y <- tail(visited$y, 1)
         list(
-          x = c(visited$x, seq(end_x, length.out = step$n_coords_visited, by = step$x_by)),
-          y = c(visited$y, seq(end_y, length.out = step$n_coords_visited, by = step$y_by))
+          x = c(visited$x, seq(end_x + step$x_by, length.out = step$distance, by = step$x_by)),
+          y = c(visited$y, seq(end_y + step$y_by, length.out = step$distance, by = step$y_by))
         )
       }) %>% 
       {tibble(x = .$x, y = .$y)}
