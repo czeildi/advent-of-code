@@ -7,23 +7,34 @@ program <- read_lines("solutions_2019/day05_input.txt") %>%
 
 PROGRAM_INPUT <- 5
 
+# to convert to R's 1 based indexing
+as_index <- function(x) x + 1
+
+set_value <- function(index, value) {
+  program[as_index(index)] <<- value
+}
+
+default_step_index <- function(idx, n_param) {
+  idx + 1 + n_param
+}
+
 commands <- list(
   "1" = list(
     "n_param" = 3,
     "op" = function(raw_params, values) {
-      program[raw_params[3] + 1] <<- `+`(values[1], values[2])
+      set_value(raw_params[3], `+`(values[1], values[2]))
     }
   ),
   "2" = list(
     "n_param" = 3,
     "op" = function(raw_params, values) {
-      program[raw_params[3] + 1] <<- `*`(values[1], values[2])
+      set_value(raw_params[3], `*`(values[1], values[2]))
     }
   ),
   "3" = list(
     "n_param" = 1,
     "op" = function(raw_params, values) {
-      program[raw_params[1] + 1] <<- PROGRAM_INPUT
+      set_value(raw_params[1], PROGRAM_INPUT)
     }
   ),
   "4" = list(
@@ -34,61 +45,53 @@ commands <- list(
   ),
   "5" = list(
     "n_param" = 2,
-    "op" = function(raw_params, values) { },
-    "step_index" = function(raw_params, values) {
-      if (values[1] != 0) values[2] + 1
-      else NULL
+    "step_index" = function(idx, values) {
+      if (values[1] != 0) as_index(values[2])
+      else default_step_index(idx, length(values))
     }
   ),
   "6" = list(
     "n_param" = 2,
-    "op" = function(raw_params, values) { },
-    "step_index" = function(raw_params, values) {
-      if (values[1] == 0) values[2] + 1
-      else NULL
+    "step_index" = function(idx, values) {
+      if (values[1] == 0) as_index(values[2])
+      else default_step_index(idx, length(values))
     }
   ),
   "7" = list(
     "n_param" = 3,
     "op" = function(raw_params, values) {
-      comparison_result <- if_else(values[1] < values[2], 1, 0)
-      program[raw_params[3] + 1] <<- comparison_result
+      condition <- values[1] < values[2]
+      set_value(raw_params[3], if_else(condition, 1, 0))
     }
   ),
   "8" = list(
     "n_param" = 3,
     "op" = function(raw_params, values) {
-      comparison_result <- if_else(values[1] == values[2], 1, 0)
-      program[raw_params[3] + 1] <<- comparison_result
+      condition <- values[1] == values[2]
+      set_value(raw_params[3], if_else(condition, 1, 0))
     }
   )
 )
 
-default_step_index <- function(idx, n_param) {
-  idx + 1 + n_param
-}
-
-idx <- 1
+idx <- as_index(0)
 
 while (program[idx] %% 100 != 99) {
   command <- commands[[as.character(program[idx] %% 100)]]
-  parameter_modes <- str_pad(as.character(program[idx] %/% 100), width = command$n_param, pad = "0") %>%
+  parameter_modes <- program[idx] %/% 100 %>%
+    {str_pad(as.character(.), width = command$n_param, pad = "0")} %>%
     str_split("") %>%
     .[[1]] %>%
     rev()
   raw_params <- program[idx + 1:command$n_param]
   param_values <- map2_dbl(raw_params, parameter_modes, ~{
-    if (.y == "0") program[.x + 1]
+    if (.y == "0") program[as_index(.x)]
     else .x
   })
-  command$op(raw_params, param_values)
+  if (!is.null(command$op)) {
+    command$op(raw_params, param_values)
+  }
   if (!is.null(command$step_index)) {
-    potential_new_idx <- command$step_index(raw_params, param_values)
-    if (is.null(potential_new_idx)) {
-      idx <- default_step_index(idx, command$n_param)
-    } else {
-      idx <- potential_new_idx
-    }
+    idx <- command$step_index(idx, param_values)
   } else {
     idx <- default_step_index(idx, command$n_param)
   }
