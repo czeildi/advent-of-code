@@ -8,7 +8,7 @@ rules <- tibble(rule = readr::read_lines('solutions_2020/day07_input.txt')) %>%
 
 assertthat::assert_that(nrow(filter(rules, parent == child_color)) == 0)
 
-COLOR_X = 'shiny gold'
+COLOR_X <- 'shiny gold'
 
 # part 1 ------------------------------------------------------------------
 
@@ -40,7 +40,7 @@ rules_w_bag_nums <- rules %>%
   select(parent, num, child_color) %>%
   mutate(num_i = if_else(num == 'no', 0, as.numeric(num))) %>%
   select(-num) %>%
-  mutate(num_bag_in_child = if_else(num_i == 0, 0, NA_real_)) 
+  mutate(num_bag_in_child = if_else(num_i == 0, 0, NA_real_))
 
 answer_found <- FALSE
 
@@ -52,16 +52,16 @@ while(!answer_found) {
     select(parent, num_total_bag_inside) %>%
     distinct() %>%
     rename(num_bag_in_child = num_total_bag_inside)
-  
+
   if (COLOR_X %in% known_colors$parent) {
     answer_found <- TRUE
   }
-  
-  new_knowledge <- rules_w_bag_nums %>% 
-    filter(is.na(num_bag_in_child)) %>% 
-    select(-num_bag_in_child) %>% 
+
+  new_knowledge <- rules_w_bag_nums %>%
+    filter(is.na(num_bag_in_child)) %>%
+    select(-num_bag_in_child) %>%
     left_join(known_colors, by = c("child_color" = "parent"))
-  
+
   rules_w_bag_nums <<- rbind(
     rules_w_bag_nums %>% filter(!is.na(num_bag_in_child)),
     new_knowledge

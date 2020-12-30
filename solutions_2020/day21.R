@@ -1,6 +1,6 @@
 library(tidyverse)
 
-input <- tibble(x = c(read_lines("solutions_2020/day21_input.txt"))) %>%
+input <- tibble(x = read_lines("solutions_2020/day21_input.txt")) %>%
   mutate(food_id = 1:n()) %>%
   separate(x, into = c("ingredients", "allergenes"), sep = "\\(") %>%
   mutate(allergenes = str_replace_all(allergenes, "contains ", "")) %>%
@@ -14,12 +14,12 @@ input <- tibble(x = c(read_lines("solutions_2020/day21_input.txt"))) %>%
 
 n_allergenes <- n_distinct(unlist(input$allergenes_l))
 
-options_for_allergenes <- input %>% 
+options_for_allergenes <- input %>%
   separate_rows(allergenes) %>%
   group_by(allergenes) %>%
   summarize(
     ingredient = list(reduce(ingredients_l, intersect))
-  ) %>% 
+  ) %>%
   unnest(ingredient)
 
 matched_allergenes <- tibble(ingredient = character(0), allergene = character(0))

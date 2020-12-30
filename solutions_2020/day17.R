@@ -17,8 +17,8 @@ max_input_x <- max(input$x)
 max_input_y <- max(input$y)
 
 coordinates_in_world <- crossing(
-  x = c((-num_cycle):(max_input_x + 1 + num_cycle)),
-  y = c((-num_cycle):(max_input_y + 1 + num_cycle)),
+  x = (-num_cycle):(max_input_x + 1 + num_cycle),
+  y = (-num_cycle):(max_input_y + 1 + num_cycle),
   z = (-num_cycle):num_cycle,
   w = (-num_cycle):num_cycle
 )
@@ -31,7 +31,7 @@ by_x_directions <- crossing(v_x = 1, v_y = -1:1, v_z = -1:1, v_w = -1:1)
 by_y_directions <- crossing(v_x = 0, v_y = 1, v_z = -1:1, v_w = -1:1)
 by_z_directions <- crossing(v_x = 0, v_y = 0, v_z = 1, v_w = -1:1)
 by_w_directions <- crossing(v_x = 0, v_y = 0, v_z = 0, v_w = 1)
-  
+
 n_neighbors_by_x_direction <- function(world, v_x, v_y, v_z, v_w) {
   world %>%
     rowwise() %>%
@@ -40,7 +40,7 @@ n_neighbors_by_x_direction <- function(world, v_x, v_y, v_z, v_w) {
     group_by(direction_const) %>%
     arrange(x) %>%
     mutate(n_neighbor = n_neighbor + coalesce(lead(cell), 0L) + coalesce(lag(cell), 0L)) %>%
-    ungroup()  
+    ungroup()
 }
 
 n_neighbors_by_y_direction <- function(world, v_x, v_y, v_z, v_w) {
@@ -51,7 +51,7 @@ n_neighbors_by_y_direction <- function(world, v_x, v_y, v_z, v_w) {
     group_by(direction_const) %>%
     arrange(y) %>%
     mutate(n_neighbor = n_neighbor + coalesce(lead(cell), 0L) + coalesce(lag(cell), 0L)) %>%
-    ungroup()  
+    ungroup()
 }
 
 n_neighbors_by_z_direction <- function(world, v_x, v_y, v_z, v_w) {
@@ -62,7 +62,7 @@ n_neighbors_by_z_direction <- function(world, v_x, v_y, v_z, v_w) {
     group_by(direction_const) %>%
     arrange(z) %>%
     mutate(n_neighbor = n_neighbor + coalesce(lead(cell), 0L) + coalesce(lag(cell), 0L)) %>%
-    ungroup()  
+    ungroup()
 }
 
 n_neighbors_by_w_direction <- function(world, v_x, v_y, v_z, v_w) {
@@ -73,7 +73,7 @@ n_neighbors_by_w_direction <- function(world, v_x, v_y, v_z, v_w) {
     group_by(direction_const) %>%
     arrange(w) %>%
     mutate(n_neighbor = n_neighbor + coalesce(lead(cell), 0L) + coalesce(lag(cell), 0L)) %>%
-    ungroup()  
+    ungroup()
 }
 
 count_neighbors <- function(world) {
