@@ -5,7 +5,7 @@ program <- read_lines("solutions_2019/day09_input.txt") %>%
   .[[1]] %>%
   as.numeric()
 
-PROGRAM_INPUT <- 1
+PROGRAM_INPUT <- 2
 PROGRAM_OUTPUT <- NULL
 RELATIVE_BASE <- 0
 
