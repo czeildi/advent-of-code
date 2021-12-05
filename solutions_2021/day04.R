@@ -7,8 +7,8 @@ bingo_numbers <- input[1] %>% str_split(",") %>% .[[1]] %>% as.numeric()
 bingo_sheets <- tail(input, -2) %>% 
   .[. != ""] %>% 
   tibble(x = .) %>% 
-  mutate(row_id = rep(1:5, nrow(.)/5)) %>% 
   mutate(sheet_id = rep(1:(nrow(.)/5), each = 5)) %>% 
+  mutate(row_id = rep(1:5, nrow(.)/5)) %>% 
   separate_rows(x, convert = TRUE) %>% 
   filter(!is.na(x)) %>% 
   mutate(col_id = rep(1:5, nrow(.)/5))
@@ -42,7 +42,7 @@ unmarked_sum * last_number
 # part 2
 
 last_winner <- sheet_wins %>% 
-  mutate(win_idx = max(sheet_wins_at)) %>% 
+  mutate(win_idx = max(sheet_wins_at)) %>% # only difference from part 1 is max instead of min
   filter(sheet_wins_at == win_idx)
 
 unmarked_sum <- last_winner %>% 
