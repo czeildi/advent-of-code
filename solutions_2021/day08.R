@@ -51,7 +51,7 @@ digits_in_order <- function(input) {
   d2 <- keep(digits, ~nchar(.x) == 5 && size_of_intersection(.x, d4) == 2)
   digits <- setdiff(digits, d2)
   
-  d5 <- digits
+  d5 <- digits # the last remaining digit is the 5
   
   in_order <- c(d0, d1, d2, d3, d4, d5, d6, d7, d8, d9)
   sorted_digits <- map_chr(in_order, sort_chars)
@@ -61,16 +61,17 @@ digits_in_order <- function(input) {
   result
 }
 
-output_value <- function(digits, output) {
-  str_split(output, " ") %>% 
-    .[[1]] %>% 
-    map_chr(sort_chars) %>% 
-    {as.numeric(paste(digits[.], collapse = ""))}
+output_value <- function(digit_mapping, output) {
+  output_digits <- map_chr(str_split(output, " ")[[1]], sort_chars)
+    
+  digit_mapping[output_digits] %>% 
+    paste(collapse = "") %>% 
+    as.numeric()
 }
 
 tibble(x = read_lines("solutions_2021/day08_input.txt")) %>% 
   separate(x, into = c("input", "output"), sep = " \\| ") %>% 
   rowwise() %>% 
   mutate(result = output_value(digits_in_order(input), output)) %>% 
-  ungroup() %>% 
-  summarize(res = sum(result))
+  pull(result) %>% 
+  sum()
