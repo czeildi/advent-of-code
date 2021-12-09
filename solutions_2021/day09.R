@@ -44,6 +44,6 @@ graph_edges_for_igraph <- map2(basin_edges$from, basin_edges$to, ~ c(.x, .y)) %>
 graph <- make_graph(graph_edges_for_igraph, directed = FALSE)
 
 comps <- igraph::components(graph)
-basin_sizes <- -sort(-comps$csize)
+basin_sizes <- sort(comps$csize, decreasing = TRUE)
 
 prod(head(basin_sizes, 3))
