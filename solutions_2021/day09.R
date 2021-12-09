@@ -1,56 +1,49 @@
 library(tidyverse)
 library(glue)
+library(igraph)
 
-input <- tibble(x = read_lines("solutions_2021/day09_input.txt")) %>% 
-  mutate(row_id = 1:n()) %>% 
-  separate_rows(x, sep = "", convert = TRUE) %>% 
-  filter(!is.na(x)) %>% 
-  group_by(row_id) %>% 
-  mutate(col_id = 1:n()) %>% 
+input <- tibble(value = read_lines("solutions_2021/day09_input.txt")) %>% 
+  mutate(x = 1:n()) %>% 
+  separate_rows(value, sep = "", convert = TRUE) %>% 
+  filter(!is.na(value)) %>% 
+  group_by(x) %>% 
+  mutate(y = 1:n()) %>% 
   ungroup()
 
-neighbors <- input %>% 
-  group_by(row_id) %>% 
-  mutate(
-    left = lag(x),
-    right = lead(x)
-  ) %>% 
+directions <- tribble(
+  ~direction, ~d_x, ~d_y,
+  "right", 1, 0,
+  "left", -1, 0,
+  "bottom", 0, 1,
+  "top", 0, -1
+)
+
+grid_w_neighbors <- input %>% 
+  inner_join(directions, by = character()) %>% 
+  mutate(nb_x = x + d_x, nb_y = y + d_y) %>% 
+  left_join(input, by = c("nb_x" = "x", "nb_y" = "y")) %>% 
+  rename(value = value.x, nb_value = value.y)
+
+# part 1
+
+grid_w_neighbors %>% 
+  mutate(is_smaller = is.na(nb_value) | value < nb_value) %>% 
+  group_by(x, y, value) %>% 
+  summarize(is_low_point = all(is_smaller)) %>% 
   ungroup() %>% 
-  group_by(col_id) %>% 
-  mutate(
-    top = lag(x),
-    bottom = lead(x)
-  ) %>% 
-  ungroup()
-
-neighbors %>% 
-  mutate(min_neighbors = pmin(left, right, bottom, top, na.rm = TRUE)) %>% 
-  mutate(risk_level = if_else(min_neighbors > x, x + 1, 0)) %>% 
-  summarize(result = sum(risk_level))
+  filter(is_low_point) %>% 
+  summarize(total_risk = sum(value + 1))
 
 # part 2
 
-basin_edges <- neighbors %>% 
-  filter(x != 9) %>% 
-  rowwise() %>% 
-  mutate(edges = list(list(
-    left_edge = list(fromx = row_id, from_y = col_id, to_x = row_id, to_y = col_id - 1, to_value = left),
-    right_edge = list(fromx = row_id, from_y = col_id, to_x = row_id, to_y = col_id + 1, to_value = right),
-    top_edge = list(fromx = row_id, from_y = col_id, to_x = row_id - 1, to_y = col_id, to_value = top),
-    bottom_edge = list(fromx = row_id, from_y = col_id, to_x = row_id + 1, to_y = col_id, to_value = bottom)
-  ))) %>% 
-  select(edges) %>% 
-  unnest(edges) %>% 
-  unnest_auto(edges) %>% 
-  filter(!is.na(to_value) & to_value != 9) %>% 
-  mutate(from_point = glue("R{fromx}C{from_y}"), to_point = glue("R{to_x}C{to_y}"))
+basin_edges <- grid_w_neighbors %>% 
+  filter(value != 9 & nb_value != 9 & !is.na(nb_value)) %>% 
+  mutate(from = glue("{x};{y}"), to = glue("{nb_x};{nb_y}"))
 
-graph_edges_for_igraph <- map2(basin_edges$from_point, basin_edges$to_point, ~ c(.x, .y)) %>% unlist()
-
+graph_edges_for_igraph <- map2(basin_edges$from, basin_edges$to, ~ c(.x, .y)) %>% unlist()
 graph <- make_graph(graph_edges_for_igraph, directed = FALSE)
 
 comps <- igraph::components(graph)
-
 basin_sizes <- -sort(-comps$csize)
 
-basin_sizes[1] * basin_sizes[2] * basin_sizes[3]
+prod(head(basin_sizes, 3))
