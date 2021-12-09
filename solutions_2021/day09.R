@@ -41,7 +41,7 @@ basin_edges <- grid_w_neighbors %>%
   mutate(from = glue("{x};{y}"), to = glue("{nb_x};{nb_y}"))
 
 graph_edges_for_igraph <- map2(basin_edges$from, basin_edges$to, ~ c(.x, .y)) %>% unlist()
-graph <- make_graph(graph_edges_for_igraph, directed = FALSE)
+graph <- igraph::make_graph(graph_edges_for_igraph, directed = FALSE)
 
 comps <- igraph::components(graph)
 basin_sizes <- sort(comps$csize, decreasing = TRUE)
