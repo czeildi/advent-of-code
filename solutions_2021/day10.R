@@ -8,9 +8,6 @@ corruption_values <- c(")" = 3, "]" = 57, "}" = 1197, ">" = 25137)
 opening <- c("(", "[", "{", "<")
 closing <- c(")", "]", "}", ">")
 
-closing_matches = closing
-names(closing_matches) <- opening
-
 opening_matches <- opening
 names(opening_matches) <- closing
 
@@ -50,3 +47,32 @@ corruption_value <- function(line) {
 }
 
 map_dbl(input, corruption_value) %>% sum()
+
+# part 2
+
+completion_values <- c("(" = 1, "[" = 2, "{" = 3, "<" = 4)
+
+incomplete_lines <- keep(input, ~{corruption_value(.x) == 0})
+
+completion_value <- function(line) {
+  chars <- line %>% str_split("") %>% .[[1]]
+  
+  verem <- c()
+  next_char_idx <- 1
+  
+  while(next_char_idx <= length(chars)) {
+    if (is_match(verem, chars[next_char_idx])) {
+      verem <- head(verem, length(verem) - 1)
+    } else {
+      verem <- c(verem, chars[next_char_idx])
+    }
+    
+    next_char_idx <- next_char_idx + 1
+  }
+  
+  reduce(rev(verem), function(prev, current) {
+    return(prev * 5 + completion_values[current])
+  }, .init = 0)
+}
+
+map_dbl(incomplete_lines, completion_value) %>% median()
