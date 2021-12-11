@@ -21,18 +21,16 @@ directions <- tribble(
   "tr", 1, -1,
 )
 
-N_TOTAL_FLASH <- 0
-
-STEP_IDX <- 1
-
-# steps start
-
-# ggplot(before_step, aes(x, y = 10 - y, fill = value == 0)) + 
-#   geom_tile() + 
+# helper for debugging
+# ggplot(before_step, aes(x, y = 10 - y, fill = value == 0)) +
+#   geom_tile() +
 #   geom_label(aes(label = value))
 
+STEP_IDX <- 1
+N_TOTAL_FLASH <- 0
 N_FLASH_WITHIN_STEP <- 0
-while (N_FLASH_WITHIN_STEP != 100) { # STEP_IDX <= 100 for part 1
+
+while (STEP_IDX <= 100) { # STEP_IDX <= 100 for part 1, N_FLASH_WITHIN_STEP != 100 for part2
   N_FLASH_WITHIN_STEP <- 0
   
   after_step_part <- before_step %>% 
@@ -50,7 +48,6 @@ while (N_FLASH_WITHIN_STEP != 100) { # STEP_IDX <= 100 for part 1
       rename(value = value.x, nb_value = value.y, is_flashed = is_flashed.x, nb_is_flashed = is_flashed.y) %>% 
       group_by(x, y, value, is_flashed) %>% 
       summarize(n_nb_flashed = sum(nb_is_flashed), .groups = "drop") %>% 
-      ungroup() %>% 
       mutate(
         is_flashed = value < 10 & (value + n_nb_flashed) >= 10,
         value = value + n_nb_flashed
@@ -60,14 +57,12 @@ while (N_FLASH_WITHIN_STEP != 100) { # STEP_IDX <= 100 for part 1
       select(x, y, value, is_flashed)
   }
   
-  # step end
-  
   before_step <- after_step_part %>% 
     mutate(value = if_else(value >= 10, 0, value))
+  
   N_TOTAL_FLASH <- N_TOTAL_FLASH + N_FLASH_WITHIN_STEP
-  print(STEP_IDX)
-  print(N_FLASH_WITHIN_STEP)
   STEP_IDX <- STEP_IDX + 1
 }
 
 N_TOTAL_FLASH
+STEP_IDX - 1
