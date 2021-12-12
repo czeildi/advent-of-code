@@ -1,11 +1,9 @@
 library(tidyverse)
 
-input <- tibble(x = read_lines("solutions_2021/input12.txt")) %>% 
+input <- tibble(x = read_lines("solutions_2021/input12_sample1.txt")) %>% 
   separate(x, c('from', 'to'))
 
 caves <- unique(c(input$from, input$to))
-
-small_caves <- caves[tolower(caves) == caves]
 
 edges <- map(caves, ~{
   unique(c(
@@ -15,50 +13,37 @@ edges <- map(caves, ~{
 }) %>% 
   set_names(caves)
 
-routes <- map(caves, ~tibble(to = character(0), n = integer(0), contains = list())) %>% set_names(caves)
-new_routes <- routes
-new_routes[["start"]] <- tibble(to = 'start', n = 1, contains = list(c("start")))
+small_caves <- caves[tolower(caves) == caves]
 
-N_NEW_ROUTE <- map_dfr(new_routes, ~.) %>% pull(n) %>% sum()
-routes <- map2(routes, new_routes, ~{
-  bind_rows(.x, .y) %>% 
-    group_by(to, contains) %>% 
-    summarize(n = sum(n), .groups = "drop")
-})
-
-can_be_visited_p1 <- function(EDGE_END, contains) {
-  !EDGE_END %in% small_caves || !EDGE_END %in% contains
+can_be_visited_p1 <- function(route_end, route_points) {
+  !route_end %in% small_caves || !route_end %in% route_points
 }
 
-can_be_visited_p2 <- function(EDGE_END, contains) {
-  if (!EDGE_END %in% small_caves) return(TRUE)
-  visited_small_caves <- contains[contains %in% small_caves]
-  if (EDGE_END %in% c('start', 'end') && EDGE_END %in% visited_small_caves) return(FALSE)
-  if (n_distinct(visited_small_caves) < length(visited_small_caves) && EDGE_END %in% visited_small_caves) return(FALSE)
+can_be_visited_p2 <- function(route_end, route_points) {
+  if (!route_end %in% small_caves) return(TRUE)
+  visited_small_caves <- route_points[route_points %in% small_caves]
+  if (route_end %in% c('start', 'end') && route_end %in% visited_small_caves) return(FALSE)
+  if (n_distinct(visited_small_caves) < length(visited_small_caves) && route_end %in% visited_small_caves) return(FALSE)
   return(TRUE)
 }
 
+routes <- map(caves, ~list()) %>% set_names(caves)
+routes[["start"]] <- list(c('start'))
+
+N_NEW_ROUTE <- 1
+
 while(N_NEW_ROUTE > 0) {
-  new_routes <- imap(edges, function(froms, EDGE_END) {
-    froms %>% 
-      map_dfr(function(from) {
+  new_routes <- imap(edges, function(edge_starts, end_end) {
+    map(edge_starts, function(from) {
         routes[[from]] %>% 
-          rowwise() %>% 
-          filter(can_be_visited_p2(EDGE_END, contains)) %>% 
-          ungroup()
-      }) %>% 
-      mutate(to = EDGE_END) %>% 
-      group_by(to, contains) %>% 
-      summarize(n = sum(n), .groups = "drop") %>% 
-      mutate(contains = map(contains, ~sort(unlist(c(EDGE_END, .))))) %>% 
-      anti_join(routes[[EDGE_END]], by = c('to', 'contains'))
+          keep(function(route) can_be_visited_p2(end_end, route)) %>% 
+          map(function(route) c(end_end, route))
+    }) %>% 
+      flatten() %>% 
+      setdiff(routes[[end_end]])
   })
-  N_NEW_ROUTE <- map_dfr(new_routes, ~.) %>% pull(n) %>% sum()
-  routes <- map2(routes, new_routes, ~{
-    bind_rows(.x, .y) %>% 
-      group_by(to, contains) %>% 
-      summarize(n = sum(n), .groups = "drop")
-  })
+  N_NEW_ROUTE <- sum(map_int(new_routes, length))
+  routes <- map2(routes, new_routes, ~c(.x, .y))
 }
 
-routes[['end']] %>% pull(n) %>% sum()
+length(routes[['end']])
