@@ -1,15 +1,11 @@
 library(tidyverse)
 
-input <- tibble(x = read_lines("solutions_2021/input12_sample1.txt")) %>% 
-  separate(x, c('from', 'to'))
+edges <- read_lines("solutions_2021/input12_sample1.txt") %>% str_split("-")
 
-caves <- unique(c(input$from, input$to))
+caves <- unique(flatten(edges))
 
-edges <- map(caves, ~{
-  unique(c(
-    filter(input, from == .) %>% pull(to),
-    filter(input, to == .) %>% pull(from)
-  ))
+edges_by_endpoint <- map(caves, function(cave) {
+  edges %>% keep(~ cave %in% .) %>% unlist() %>% .[. != cave]
 }) %>% 
   set_names(caves)
 
@@ -30,10 +26,8 @@ can_be_visited_p2 <- function(route_end, route_points) {
 routes <- map(caves, ~list()) %>% set_names(caves)
 routes[["start"]] <- list(c('start'))
 
-N_NEW_ROUTE <- 1
-
-while(N_NEW_ROUTE > 0) {
-  new_routes <- imap(edges, function(edge_starts, end_end) {
+repeat {
+  new_routes <- imap(edges_by_endpoint, function(edge_starts, end_end) {
     map(edge_starts, function(from) {
         routes[[from]] %>% 
           keep(function(route) can_be_visited_p2(end_end, route)) %>% 
@@ -42,7 +36,8 @@ while(N_NEW_ROUTE > 0) {
       flatten() %>% 
       setdiff(routes[[end_end]])
   })
-  N_NEW_ROUTE <- sum(map_int(new_routes, length))
+  n_new_route <- sum(map_int(new_routes, length))
+  if (n_new_route == 0) break;
   routes <- map2(routes, new_routes, ~c(.x, .y))
 }
 
