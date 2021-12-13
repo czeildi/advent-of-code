@@ -15,17 +15,11 @@ instructions <- tibble(x = input[2]) %>%
 map2(instructions$axis, instructions$value, function(axis, value) {
   if (axis == 'x') {
     dots <<- dots %>% 
-      mutate(x = case_when(
-        x <= value ~ x,
-        TRUE ~ as.integer(2 * value - x)
-      )) %>% 
+      mutate(x = if_else(x <= value, x, 2L * value - x)) %>% 
       distinct(x, y)
   } else {
     dots <<- dots %>% 
-      mutate(y = case_when(
-        y <= value ~ y,
-        TRUE ~ as.integer(2 * value - y)
-      )) %>% 
+      mutate(y = if_else(y <= value, y, 2L * value - y)) %>% 
       distinct(x, y)
   }
 })
