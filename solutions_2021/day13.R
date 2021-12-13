@@ -11,14 +11,14 @@ instructions <- tibble(x = input[2]) %>%
   filter(x != "") %>% 
   extract(x, c("axis", "value"), "fold along ([a-z])=(\\d+)", convert = TRUE)
 
-walk2(instructions$axis, instructions$value, function(axis, value) {
-  dots <<- dots %>% 
+folded <- reduce2(instructions$axis, instructions$value, function(dots, axis, value) {
+  dots %>% 
     mutate(
       x = if_else(x <= value | axis == 'y', x, 2L * value - x),
       y = if_else(y <= value | axis == 'x', y, 2L * value - y)
     ) %>% 
     distinct(x, y)
-})
+}, .init = dots)
 
-ggplot(dots, aes(x = x, y = -y)) + 
+ggplot(folded, aes(x = x, y = -y)) + 
   geom_tile()
