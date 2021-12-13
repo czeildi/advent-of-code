@@ -12,7 +12,7 @@ instructions <- tibble(x = input[2]) %>%
   filter(x != "") %>% 
   extract(x, c("axis", "value"), "fold along ([a-z])=(\\d+)", convert = TRUE)
 
-map2(instructions$axis, instructions$value, function(axis, value) {
+walk2(instructions$axis, instructions$value, function(axis, value) {
   if (axis == 'x') {
     dots <<- dots %>% 
       mutate(x = if_else(x <= value, x, 2L * value - x)) %>% 
