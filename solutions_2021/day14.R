@@ -3,6 +3,7 @@ library(tidyverse)
 input <- str_split(read_file("solutions_2021/input14.txt"), "\n\n")[[1]]
 
 starting <- input[1]
+chars_of <- function(text) str_split(text, "")[[1]]
 
 rules <- tibble(x = input[2]) %>% 
   separate_rows(x, sep = "\n") %>% 
@@ -10,15 +11,15 @@ rules <- tibble(x = input[2]) %>%
   extract(x, c("pair", "inserted"), "([A-Z]+) -> ([A-Z])", convert = TRUE) %>% 
   rowwise() %>% 
   mutate(new_pairs = list(c(
-    paste0(str_split(pair, "")[[1]][1], inserted),
-    paste0(inserted, str_split(pair, "")[[1]][2]))
+    paste0(chars_of(pair)[1], inserted),
+    paste0(inserted, chars_of(pair)[2]))
   )) %>% 
   ungroup() %>% 
   select(-inserted)
 
 
 pairs_from_string <- function(text) {
-  text_chars <- str_split(text, "")[[1]]
+  text_chars <- chars_of(text)
   head(paste0(text_chars, lead(text_chars)), -1)
 }
 
@@ -37,7 +38,7 @@ final_pair_frequencies <- reduce(1:40, function(prev, current) {
 
 final_letter_frequencies <- final_pair_frequencies %>% 
   rowwise() %>% 
-  mutate(letters = list(str_split(pair, "")[[1]])) %>% 
+  mutate(letters = list(chars_of(pair))) %>% 
   unnest_longer(letters) %>% 
   group_by(letters) %>% 
   summarize(freq = ceiling(sum(freq)/2)) %>% 
