@@ -27,12 +27,10 @@ explode <- function(input, position_for_explode) {
     new_before <- before
   }
   
-  
   after_explode <- paste0(new_before, "0", new_after)
 }
 
-split <- function(input) {
-  to_split <- str_extract(input, "\\d{2,}")
+split <- function(input, to_split) {
   num <- as.numeric(to_split)
   left <- num %/% 2
   right <- num - left
@@ -50,8 +48,9 @@ reduce_input <- function(input) {
     return(reduce_input(explode(input, position_for_explode)))
   }
   
-  if (!is.na(str_extract(input, "\\d{2,}"))) {
-    return(reduce_input(split(input)))
+  to_split <- str_extract(input, "\\d{2,}")
+  if (!is.na(to_split)) {
+    return(reduce_input(split(input, to_split)))
   }
   return(input)
 }
