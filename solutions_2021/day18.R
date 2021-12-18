@@ -67,7 +67,9 @@ final_sum <- reduce(fish_numbers, function(prev, current) {
   reduce_input(add_snailfish(prev, current))
 })
 
-# magnitude calculated in javascript with other script
+write_lines(final_sum, "solutions_2021/day18_intermediate_p1.txt")
+
+# magnitude calculated in javascript with  "node solutions_2021/day18.js"
 
 # part 2
 candidates <- crossing(p1 = fish_numbers, p2 = fish_numbers) %>% 
@@ -84,4 +86,4 @@ candidate_sums <- pmap_chr(candidates, ~{
 
 write_lines(candidate_sums, "solutions_2021/day18_intermediate.txt")
 
-# max magnitude calculated in javascript with other script
+# max magnitude calculated in javascript with "node solutions_2021/day18.js"
