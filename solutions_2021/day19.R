@@ -7,7 +7,7 @@ beacon_coords <- tibble(coords = read_file("solutions_2021/input19_sample2.txt")
   mutate(scanner_id = 1:n()) %>% 
   separate_rows(coords, sep = "\n") %>% 
   filter(coords != "") %>% 
-  separate(coords, c('x', 'y', 'z'), sep = ",", convert = TRUE)
+  separate(coords, c('orig_x', 'orig_y', 'orig_z'), sep = ",", convert = TRUE)
 
 # helpers --------------------------------------------------------
 
@@ -26,7 +26,7 @@ rotations <- function(x, y, z) {
   map(
     list(c(x, y, z), c(x, z, y), c(y, z, x), c(y, x, z), c(z, x, y), c(z, y, x)),
     function(mixed) {
-      map(rot, ~ (. * mixed) %>% set_names(letters[1:3]))
+      map(rot, ~ (. * mixed) %>% set_names(c("x", "y", "z")))
     }
   ) %>% flatten() %>% 
     set_names(1:48)
@@ -35,36 +35,36 @@ rotations <- function(x, y, z) {
 scanner_with_all_rotations <- function(beacon_coords) {
   beacon_coords %>% 
     rowwise() %>% 
-    mutate(coords = list(rotations(x, y, z))) %>% 
-    unnest_longer(coords) %>% 
-    unnest_wider(coords)
+    mutate(rotation = list(rotations(orig_x, orig_y, orig_z))) %>% 
+    unnest_longer(rotation) %>% 
+    unnest_wider(rotation)
 }
 
-distances_for_scanner <- function(current_scanner) {
-  current_scanner %>% 
-    inner_join(current_scanner, by = 'coords_id', suffix = c('1', '2')) %>% 
-    filter(x1 != x2 | y1 != y2 | z1 != z2) %>% 
-    mutate(ad = a1 - a2, bd = b1 - b2, cd = c1 - c2) %>% 
-    select(coords_id, a1, b1, c1, ad, bd, cd) %>% 
-    nest(data = c(a1, b1, c1, ad, bd, cd))
+distances_for_scanner <- function(all_rotations_of_scanner) {
+  all_rotations_of_scanner %>% 
+    inner_join(all_rotations_of_scanner, by = 'rotation_id', suffix = c('', '2')) %>% 
+    filter(orig_x != orig_x2  | orig_y != orig_y2 | orig_y != orig_y2) %>% 
+    mutate(dx = x - x2, dy = y - y2, dz = z - z2) %>% 
+    select(rotation_id, x, y, z, dx, dy, dz) %>% 
+    nest(data = c(x, y, z, dx, dy, dz))
 }
 
 count_of_points_in_common_distance_matrix <- function(distances, known_beacon_distances) {
   distances %>%
-    inner_join(known_beacon_distances, by = c('ad', 'bd', 'cd')) %>%
-    select(x_known, y_known, z_known, a1, b1, c1) %>%
+    inner_join(known_beacon_distances, by = c('dx', 'dy', 'dz')) %>%
+    select(known_x, known_y, known_z, x, y, z) %>%
     distinct() %>%
     nrow()
 }
 
 get_scanner_position <- function(current_distances, correct_rotation, known_beacon_distances) {
   current_distances %>% 
-    inner_join(correct_rotation, by = "coords_id") %>% 
+    inner_join(correct_rotation, by = "rotation_id") %>% 
     pluck('data', 1) %>% 
-    inner_join(known_beacon_distances, by = c('ad', 'bd', 'cd')) %>% 
-    select(x_known, y_known, z_known, a1, b1, c1) %>% 
+    inner_join(known_beacon_distances, by = c('dx', 'dy', 'dz')) %>% 
+    select(known_x, known_y, known_z, x, y, z) %>% 
     distinct() %>% 
-    mutate(sx = a1 - x_known, sy = b1 - y_known, sz = c1 - z_known) %>% 
+    mutate(sx = x - known_x, sy = y - known_y, sz = z - known_z) %>% 
     select(sx, sy, sz) %>% 
     distinct()
 }
@@ -74,8 +74,7 @@ get_scanner_position <- function(current_distances, correct_rotation, known_beac
 scanner_positions <- tibble(sx = 0, sy = 0, sz = 0)
 
 known_beacons <- filter(beacon_coords, scanner_id == 1) %>% 
-  select(-scanner_id) %>% 
-  rename(a = x, b = y, c = z)
+  select(known_x = orig_x, known_y = orig_y, known_z = orig_z)
 
 scanners_to_identify <- setdiff(unique(beacon_coords$scanner_id), 1)
 
@@ -89,14 +88,14 @@ while(length(scanners_to_identify) > 0) {
   current_distances <- distances_for_scanner(beacon_coords_to_identify)
   
   known_beacon_distances <- known_beacons %>% 
-    inner_join(known_beacons, by = character(0), suffix = c('1', '2')) %>% 
-    filter(a1 != a2 | b1 != b2 | c1 != c2) %>% 
-    mutate(ad = a1 - a2, bd = b1 - b2, cd = c1 - c2) %>% 
-    select(ad, bd, cd, x_known = a1, y_known = b1, z_known = c1)
+    inner_join(known_beacons, by = character(0), suffix = c('', '2')) %>% 
+    filter(known_x != known_x2  | known_y != known_y2 | known_z != known_z2) %>% 
+    mutate(dx = known_x - known_x2, dy = known_y - known_y2, dz = known_z - known_z2) %>% 
+    select(known_x, known_y, known_z, dx, dy, dz)
   
   rotations_with_enough_common_pairwise_distances <- current_distances %>% 
     rowwise() %>% 
-    mutate(common_distances = nrow(inner_join(data, known_beacon_distances, by = c('ad', 'bd', 'cd')))) %>% 
+    mutate(common_distances = nrow(inner_join(data, known_beacon_distances, by = c('dx', 'dy', 'dz')))) %>% 
     filter(common_distances >= 12 * 11)
   
   if (nrow(rotations_with_enough_common_pairwise_distances) > 0) {
@@ -104,19 +103,19 @@ while(length(scanners_to_identify) > 0) {
     correct_rotation <- rotations_with_enough_common_pairwise_distances %>%
       # with the mirror image there would be more distinct points as distances would be the same, but points would not align correctly
       filter(count_of_points_in_common_distance_matrix(data, known_beacon_distances) == ceiling(sqrt(common_distances))) %>%
-      select(coords_id)
+      select(rotation_id)
     
     scanner_position <- get_scanner_position(current_distances, correct_rotation, known_beacon_distances)
     scanner_positions <- rbind(scanner_positions, scanner_position)
     
     new_known_beacons <- beacon_coords_to_identify %>% 
-      inner_join(correct_rotation, by = "coords_id") %>% 
+      inner_join(correct_rotation, by = "rotation_id") %>% 
       mutate(
-        a = a - scanner_position$sx,
-        b = b - scanner_position$sy,
-        c = c - scanner_position$sz
+        known_x = x - scanner_position$sx,
+        known_y = y - scanner_position$sy,
+        known_z = z - scanner_position$sz
       ) %>% 
-      select(a, b, c)
+      select(known_x, known_y, known_z)
     
     known_beacons <- rbind(known_beacons, new_known_beacons) %>% 
       distinct()
