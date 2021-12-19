@@ -43,27 +43,24 @@ scanner_with_all_rotations <- function(beacon_coords) {
 distances_for_scanner <- function(all_rotations_of_scanner) {
   all_rotations_of_scanner %>% 
     inner_join(all_rotations_of_scanner, by = 'rotation_id', suffix = c('', '2')) %>% 
-    filter(orig_x != orig_x2  | orig_y != orig_y2 | orig_y != orig_y2) %>% 
+    filter(x != x2  | y != y2 | y != y2) %>% 
     mutate(dx = x - x2, dy = y - y2, dz = z - z2) %>% 
     select(rotation_id, x, y, z, dx, dy, dz) %>% 
     nest(data = c(x, y, z, dx, dy, dz))
 }
 
-count_of_points_in_common_distance_matrix <- function(distances, known_beacon_distances) {
+points_in_common_distance_matrix <- function(distances, known_beacon_distances) {
   distances %>%
     inner_join(known_beacon_distances, by = c('dx', 'dy', 'dz')) %>%
     select(known_x, known_y, known_z, x, y, z) %>%
-    distinct() %>%
-    nrow()
+    distinct()
 }
 
 get_scanner_position <- function(current_distances, correct_rotation, known_beacon_distances) {
   current_distances %>% 
     inner_join(correct_rotation, by = "rotation_id") %>% 
     pluck('data', 1) %>% 
-    inner_join(known_beacon_distances, by = c('dx', 'dy', 'dz')) %>% 
-    select(known_x, known_y, known_z, x, y, z) %>% 
-    distinct() %>% 
+    points_in_common_distance_matrix(known_beacon_distances) %>% 
     mutate(sx = x - known_x, sy = y - known_y, sz = z - known_z) %>% 
     select(sx, sy, sz) %>% 
     distinct()
@@ -102,7 +99,7 @@ while(length(scanners_to_identify) > 0) {
     
     correct_rotation <- rotations_with_enough_common_pairwise_distances %>%
       # with the mirror image there would be more distinct points as distances would be the same, but points would not align correctly
-      filter(count_of_points_in_common_distance_matrix(data, known_beacon_distances) == ceiling(sqrt(common_distances))) %>%
+      filter(nrow(points_in_common_distance_matrix(data, known_beacon_distances)) == ceiling(sqrt(common_distances))) %>%
       select(rotation_id)
     
     scanner_position <- get_scanner_position(current_distances, correct_rotation, known_beacon_distances)
