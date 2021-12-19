@@ -1,10 +1,8 @@
 library(tidyverse)
 library(zeallot)
 
-beacon_coords <- read_file("solutions_2021/input19.txt") %>% 
-  str_split("--- scanner \\d+ ---\n") %>% 
-  pluck(1) %>% 
-  tibble(coords = .) %>% 
+beacon_coords <- tibble(coords = read_file("solutions_2021/input19_sample2.txt")) %>% 
+  separate_rows(coords, sep = "--- scanner \\d+ ---\n") %>% 
   filter(coords != "") %>% 
   mutate(scanner_id = 1:n()) %>% 
   separate_rows(coords, sep = "\n") %>% 
@@ -13,6 +11,7 @@ beacon_coords <- read_file("solutions_2021/input19.txt") %>%
 
 # helpers --------------------------------------------------------
 
+# half of these are actually mirror images, will be sorted out later
 rotations <- function(x, y, z) {
   rot <- list(
     c(1, 1, 1),
@@ -97,16 +96,14 @@ while(length(scanners_to_identify) > 0) {
   
   rotations_with_enough_common_pairwise_distances <- current_distances %>% 
     rowwise() %>% 
-    filter(nrow(inner_join(data, known_beacon_distances, by = c('ad', 'bd', 'cd'))) >= 12 * 11)
+    mutate(common_distances = nrow(inner_join(data, known_beacon_distances, by = c('ad', 'bd', 'cd')))) %>% 
+    filter(common_distances >= 12 * 11)
   
   if (nrow(rotations_with_enough_common_pairwise_distances) > 0) {
     
     correct_rotation <- rotations_with_enough_common_pairwise_distances %>%
-      filter(between(
-        count_of_points_in_common_distance_matrix(data, known_beacon_distances),
-        12,
-        100
-      )) %>%
+      # with the mirror image there would be more distinct points as distances would be the same, but points would not align correctly
+      filter(count_of_points_in_common_distance_matrix(data, known_beacon_distances) == ceiling(sqrt(common_distances))) %>%
       select(coords_id)
     
     scanner_position <- get_scanner_position(current_distances, correct_rotation, known_beacon_distances)
