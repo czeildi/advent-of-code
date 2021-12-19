@@ -13,22 +13,16 @@ beacon_coords <- tibble(coords = read_file("solutions_2021/input19_sample2.txt")
 
 # half of these are actually mirror images, will be sorted out later
 rotations <- function(x, y, z) {
-  rot <- list(
-    c(1, 1, 1),
-    c(1, 1, -1),
-    c(1, -1, 1),
-    c(-1, 1, 1),
-    c(1, -1, -1),
-    c(-1, 1, -1),
-    c(-1, -1, 1),
-    c(-1, -1, -1)
-  )
-  map(
-    list(c(x, y, z), c(x, z, y), c(y, z, x), c(y, x, z), c(z, x, y), c(z, y, x)),
-    function(mixed) {
-      map(rot, ~ (. * mixed) %>% set_names(c("x", "y", "z")))
-    }
-  ) %>% flatten() %>% 
+  facing_directions <- cross3(c(-1, 1), c(-1, 1), c(-1, 1)) %>% 
+    map(unlist)
+  coord_variations <- combinat::permn(c(x, y, z))
+  
+  map(coord_variations, function(coords) {
+    map(facing_directions, function(direction) {
+      set_names(direction * coords, c("x", "y", "z"))
+    })
+  }) %>% 
+    flatten() %>% 
     set_names(1:48)
 }
 
@@ -103,7 +97,6 @@ while(length(scanners_to_identify) > 0) {
       select(rotation_id)
     
     scanner_position <- get_scanner_position(current_distances, correct_rotation, known_beacon_distances)
-    scanner_positions <- rbind(scanner_positions, scanner_position)
     
     new_known_beacons <- beacon_coords_to_identify %>% 
       inner_join(correct_rotation, by = "rotation_id") %>% 
@@ -114,9 +107,10 @@ while(length(scanners_to_identify) > 0) {
       ) %>% 
       select(known_x, known_y, known_z)
     
+    # record new knowledge
+    scanner_positions <- rbind(scanner_positions, scanner_position)
     known_beacons <- rbind(known_beacons, new_known_beacons) %>% 
       distinct()
-    
     scanners_to_identify <- setdiff(scanners_to_identify, new_scanner_id)
   } else {
     scanners_to_identify <- c(scanners_to_identify[2:length(scanners_to_identify)], scanners_to_identify[1])
