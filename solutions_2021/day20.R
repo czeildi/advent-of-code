@@ -1,12 +1,9 @@
 library(tidyverse)
 
-input <- read_file("solutions_2021/input20.txt") %>% 
-  str_split("\n\n") %>% 
-  pluck(1)
+input <- str_split(read_file("solutions_2021/input20.txt"), "\n\n")[[1]]
 
-mapping <- input[1] %>% str_split("\n") %>% pluck(1) %>% paste(collapse = "") %>% 
-  str_split("") %>% pluck(1) %>%
-  map_int(~ if_else(. == ".", 0L, 1L))
+mapping <- str_split(input[1], "")[[1]] %>% 
+  map_int(~ as.integer(. == "#"))
 
 image <- tibble(value = input[2]) %>% 
   separate_rows(value, sep = "\n") %>% 
@@ -16,7 +13,7 @@ image <- tibble(value = input[2]) %>%
   group_by(y) %>% 
   mutate(x = 1:n()) %>% 
   ungroup() %>% 
-  mutate(value = if_else(value == '.', 0L, 1L))
+  mutate(value = as.integer(value == "#"))
 
 neighbors <- tribble(
   ~direction, ~dx, ~dy,
@@ -29,38 +26,28 @@ neighbors <- tribble(
   "bl", -1, 1,
   "b", 0, 1,
   "br", 1, 1
-) %>% 
-  mutate(idx = 1:9)
+)
 
 binary_vec_to_decimal <- function(binary) {
   sum(rev(binary) * 2 ^ (0:(length(binary) - 1)))
 }
 
-# for debugging
-show_image <- function(image) {
-  image %>% 
-    ggplot(aes(x = x, y = -y, alpha = value)) + 
-    geom_tile()
-}
-
 enhance <- function(image, border_value) {
   image %>% 
     inner_join(neighbors, by = character(0)) %>% 
-    mutate(nx = x + dx, ny = y + dy) %>% 
-    left_join(image, by = c('nx' = 'x', 'ny' = 'y')) %>% 
-    rename(value = value.x, nvalue = value.y) %>% 
-    mutate(nvalue = if_else(is.na(nvalue), border_value, nvalue)) %>% 
+    mutate(nb_x = x + dx, nb_y = y + dy) %>% 
+    left_join(image, by = c('nb_x' = 'x', 'nb_y' = 'y')) %>% 
+    mutate(nb_value = if_else(is.na(value.y), border_value, value.y)) %>% 
     group_by(x, y) %>% 
-    summarize(binary = binary_vec_to_decimal(nvalue), .groups = "drop") %>% 
+    summarize(binary = binary_vec_to_decimal(nb_value), .groups = "drop") %>% 
     mutate(value = mapping[binary + 1]) %>% 
     select(x, y, value)
-    
 }
 
 add_border <- function(image) {
   crossing(
-    x = (min(image$x) - 1L):(max(image$x) + 1L),
-    y = (min(image$y) - 1L):(max(image$y) + 1L)
+    x = (min(image$x) - 1):(max(image$x) + 1),
+    y = (min(image$y) - 1):(max(image$y) + 1)
   ) %>% 
     left_join(image, by = c('x', 'y'))
 }
