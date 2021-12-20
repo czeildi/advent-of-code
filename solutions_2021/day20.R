@@ -4,7 +4,7 @@ input <- read_file("solutions_2021/input20.txt") %>%
   str_split("\n\n") %>% 
   pluck(1)
 
-algo <- input[1] %>% str_split("\n") %>% pluck(1) %>% paste(collapse = "") %>% 
+mapping <- input[1] %>% str_split("\n") %>% pluck(1) %>% paste(collapse = "") %>% 
   str_split("") %>% pluck(1) %>%
   map_int(~ if_else(. == ".", 0L, 1L))
 
@@ -30,7 +30,6 @@ neighbors <- tribble(
   "b", 0, 1,
   "br", 1, 1
 ) %>% 
-  select(-direction) %>% 
   mutate(idx = 1:9)
 
 binary_vec_to_decimal <- function(binary) {
@@ -44,35 +43,32 @@ show_image <- function(image) {
     geom_tile()
 }
 
-enhance <- function(image_at_step, border_value) {
-  image_at_step %>% 
+enhance <- function(image, border_value) {
+  image %>% 
     inner_join(neighbors, by = character(0)) %>% 
     mutate(nx = x + dx, ny = y + dy) %>% 
-    left_join(image_at_step, by = c('nx' = 'x', 'ny' = 'y')) %>% 
+    left_join(image, by = c('nx' = 'x', 'ny' = 'y')) %>% 
     rename(value = value.x, nvalue = value.y) %>% 
     mutate(nvalue = if_else(is.na(nvalue), border_value, nvalue)) %>% 
     group_by(x, y) %>% 
     summarize(binary = binary_vec_to_decimal(nvalue), .groups = "drop") %>% 
-    mutate(value = algo[binary + 1]) %>% 
+    mutate(value = mapping[binary + 1]) %>% 
     select(x, y, value)
     
 }
 
-add_border <- function(image_at_step, border_value) {
-  canvas <- crossing(
-    x = (min(image_at_step$x) - 1L):(max(image_at_step$x) + 1L),
-    y = (min(image_at_step$y) - 1L):(max(image_at_step$y) + 1L)
-  )
-  
-  canvas %>% 
-    left_join(image_at_step, by = c('x', 'y')) %>% 
-    mutate(value = if_else(is.na(value), border_value, value))
+add_border <- function(image) {
+  crossing(
+    x = (min(image$x) - 1L):(max(image$x) + 1L),
+    y = (min(image$y) - 1L):(max(image$y) + 1L)
+  ) %>% 
+    left_join(image, by = c('x', 'y'))
 }
 
-enhanced <- reduce(1:50, function(prev, current) {
+enhanced <- reduce(1:2, function(prev, current) {
   list(
-    image = enhance(add_border(prev$image, prev$border_value), prev$border_value),
-    border_value = if_else(prev$border_value == 0, head(algo, 1), tail(algo, 1))
+    image = enhance(add_border(prev$image), prev$border_value),
+    border_value = if_else(prev$border_value == 0, head(mapping, 1), tail(mapping, 1))
   )
 }, .init = list(image = image, border_value = 0L))
 
