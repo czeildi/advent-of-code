@@ -34,9 +34,7 @@ neighbors <- tribble(
   mutate(idx = 1:9)
 
 binary_vec_to_decimal <- function(binary) {
-  res <- sum(rev(binary) * 2 ^ (0:(length(binary) - 1)))
-  if (is.na(res) || res > 511) print(res)
-  res
+  sum(rev(binary) * 2 ^ (0:(length(binary) - 1)))
 }
 
 # for debugging
@@ -53,7 +51,6 @@ enhance <- function(image_at_step, border_value) {
     left_join(image_at_step, by = c('nx' = 'x', 'ny' = 'y')) %>% 
     rename(value = value.x, nvalue = value.y) %>% 
     mutate(nvalue = if_else(is.na(nvalue), border_value, nvalue)) %>% 
-    arrange(x, y, idx) %>% 
     group_by(x, y) %>% 
     summarize(binary = binary_vec_to_decimal(nvalue), .groups = "drop") %>% 
     mutate(value = algo[binary + 1]) %>% 
