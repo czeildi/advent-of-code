@@ -35,7 +35,10 @@ min(scores) * die_roll
 # part 2 -----------------------------------------------------------------
 
 # transition matrix
-die_sum_frequencies <- cross3(1:3, 1:3, 1:3) %>% map_int(~sum(unlist(.))) %>% table() %>% as.list()
+die_sum_frequencies <- cross3(1:3, 1:3, 1:3) %>% 
+  map_int(~sum(unlist(.))) %>% 
+  table() %>% 
+  as.list()
 
 n_possibility_in_single_roll <- function(from, to) {
   score_to_gain <- to - from
