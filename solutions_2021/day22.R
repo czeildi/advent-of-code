@@ -7,19 +7,19 @@ input <- tibble(value = read_lines("solutions_2021/input22.txt")) %>%
 
 # part 1
 
-# input %>% 
-#   filter(xmin >= -50 & ymin >= -50 & zmin >= -50 & xmax <= 50 & ymax <= 50 & zmax <= 50) %>%
-#   rowwise() %>% 
-#   mutate(cube_points = list(crossing(x = xmin:xmax, y = ymin:ymax, z = zmin:zmax))) %>% 
-#   unnest(cube_points) %>% 
-#   select(x, y, z, method) %>% 
-#   group_by(x, y, z) %>% 
-#   summarize(
-#     final_value = tail(method, 1),
-#     .groups = "drop"
-#   ) %>% 
-#   ungroup() %>% 
-#   summarize(num_turned_on = sum(final_value))
+input %>%
+  filter(xmin >= -50 & ymin >= -50 & zmin >= -50 & xmax <= 50 & ymax <= 50 & zmax <= 50) %>%
+  rowwise() %>%
+  mutate(cube_points = list(crossing(x = xmin:xmax, y = ymin:ymax, z = zmin:zmax))) %>%
+  unnest(cube_points) %>%
+  select(x, y, z, method) %>%
+  group_by(x, y, z) %>%
+  summarize(
+    final_value = tail(method, 1),
+    .groups = "drop"
+  ) %>%
+  ungroup() %>%
+  summarize(num_turned_on = sum(final_value))
 
 # part 2
 
