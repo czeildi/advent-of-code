@@ -70,12 +70,15 @@ z_intervals <- map2(z_breakpoints, lead(z_breakpoints), ~ {
 
 volume <- 0
 
+original_cubes <- input %>% 
+  rename(x1 = xmin, x2 = xmax, y1 = ymin, y2 = ymax, z1 = zmin, z2 = zmax) %>% 
+  mutate(dummy = 1) %>% 
+  as.data.table()
+
 for (i in 1:nrow(x_intervals)) {
-  print(paste(Sys.time(), "checking:", i))
-  volume_in_x_crosssection <- input %>% 
-    rename(x1 = xmin, x2 = xmax, y1 = ymin, y2 = ymax, z1 = zmin, z2 = zmax) %>% 
-    mutate(dummy = 1) %>% 
-    as.data.table() %>% 
+  print(paste(Sys.time(), "checking chunk:", i))
+  
+  volume_in_x_crosssection <- original_cubes %>% 
     merge(x_intervals[i, ], by = "dummy", allow.cartesian = TRUE) %>% 
     .[xmin >= x1 & xmax <= x2, ] %>% 
     merge(y_intervals, by = "dummy", allow.cartesian = TRUE) %>% 
@@ -86,6 +89,7 @@ for (i in 1:nrow(x_intervals)) {
     .[last_light == 1,] %>% 
     .[, volume := (xmax - xmin + 1) * (ymax - ymin + 1) * (zmax - zmin + 1)] %>% 
     .[, sum(volume)]
+  
   volume <- volume + volume_in_x_crosssection
 }
 
