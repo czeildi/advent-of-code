@@ -1,3 +1,14 @@
+read_as_grid <- function(input, col_sep = "") {
+  tibble(value = input) %>% 
+    separate_rows(value, sep = "\n") %>% 
+    mutate(y = 1:n()) %>% 
+    separate_rows(value, sep = col_sep) %>% 
+    filter(value != "") %>% 
+    group_by(y) %>% 
+    mutate(x = 1:n()) %>% 
+    ungroup()
+}
+
 one_indexed_remainder <- function(value, mod) {
   if_else(value %% mod == 0, mod, value %% mod) 
 }
