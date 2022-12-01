@@ -1,16 +1,16 @@
 read_as_grid <- function(input, col_sep = "") {
-  tibble(value = input) %>% 
-    separate_rows(value, sep = "\n") %>% 
-    mutate(y = 1:n()) %>% 
-    separate_rows(value, sep = col_sep) %>% 
-    filter(value != "") %>% 
-    group_by(y) %>% 
-    mutate(x = 1:n()) %>% 
+  tibble(value = input) %>%
+    separate_rows(value, sep = "\n") %>%
+    mutate(y = 1:n()) %>%
+    separate_rows(value, sep = col_sep) %>%
+    filter(value != "") %>%
+    group_by(y) %>%
+    mutate(x = 1:n()) %>%
     ungroup()
 }
 
 one_indexed_remainder <- function(value, mod) {
-  if_else(value %% mod == 0, mod, value %% mod) 
+  if_else(value %% mod == 0, mod, value %% mod)
 }
 
 directions <- tribble(
@@ -24,7 +24,7 @@ directions <- tribble(
   "bl", -1, 1,
   "b", 0, 1,
   "br", 1, 1
-) %>% 
+) %>%
   select(-direction)
 
 binary_vec_to_decimal <- function(binary) {
@@ -38,7 +38,7 @@ decimal_to_n_digit_binary <- function(num, n) {
     result <- paste0(num %% 2, result)
     num <- (num - num %% 2) / 2
   }
-  str_pad(result, n, pad = '0')
+  str_pad(result, n, pad = "0")
 }
 
 sort_chars <- function(word) {
