@@ -1,0 +1,6 @@
+linters: linters_with_defaults(
+    line_length_linter(100),
+    object_length_linter(50),
+    object_usage_linter = NULL,
+    commented_code_linter = NULL
+  )
