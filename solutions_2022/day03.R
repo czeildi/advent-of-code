@@ -1,6 +1,4 @@
 library(tidyverse)
-library(glue)
-library(memoise)
 library(data.table)
 options(scipen = 999)
 
@@ -12,26 +10,26 @@ input <- tibble(x = read_lines(input_file))
 
 # part 1
 ruck_items <- input |>
-  mutate(n_item = nchar(x), ruck = 1:n()) |>
+  mutate(n_item = nchar(x), ruck = row_number()) |>
   separate_rows(x, sep = "") |>
   filter(x != "")  |>
   group_by(ruck) |>
-  mutate(rk = 1:n()) |>
+  mutate(rk = row_number()) |>
   ungroup() |>
   mutate(part = rk <= n_item / 2)
 
 left_items <- filter(ruck_items, part == TRUE)
 right_items <- filter(ruck_items, part == FALSE)
 
+get_score <- function(letter) {
+  ascii <- utf8ToInt(letter)
+  if_else(ascii < 97, ascii - 38, ascii - 96)
+}
+
 inner_join(left_items, right_items, by  = c("x", "ruck")) |>
-  select(x, ruck) |>
-  distinct() |>
-  rowwise() |>
-  mutate(value = if_else(
-    utf8ToInt(x) < 97, utf8ToInt(x) - 38, utf8ToInt(x) - 96
-  )) |>
-  pull(value) |>
-  sum()
+  distinct(ruck, x) |>
+  mutate(value = map_dbl(x, get_score)) |>
+  summarize(result = sum(value))
 
 
 
@@ -45,22 +43,17 @@ group_racks <- input |>
   separate_rows(x, sep = "") |>
   filter(x != "")
 
-grouped_racks <- lapply(split(as.data.table(group_racks), by = "elf_group"), as_tibble)
+grouped_racks <- split(as.data.table(group_racks), by = "elf_group") |>
+  lapply(as_tibble)
 
 sapply(grouped_racks, function(racks) {
   i1 <- filter(racks, ruck == 1)
   i2 <- filter(racks, ruck == 2)
   i3 <- filter(racks, ruck == 3)
 
-  common_value <- i1 |>
-    inner_join(i2, by = "x") |> inner_join(i3, by = "x") |>
-    select(x) |>
-    distinct() |>
-    pull(x)
-
-  score <- if_else(
-    utf8ToInt(common_value) < 97,
-    utf8ToInt(common_value) - 38,
-    utf8ToInt(common_value) - 96
-  )
+  inner_join(i1, i2, by = "x") |> 
+    inner_join(i3, by = "x") |>
+    pull(x) |>
+    unique() |>
+    get_score()
 }) |> sum()
