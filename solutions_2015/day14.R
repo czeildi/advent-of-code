@@ -14,9 +14,12 @@ Dancer can fly 7 km/s for 20 seconds, but then must rest for 119 seconds."
 
 time <- 2503
 
-tibble(x = str_split(rd, "\n")[[1]]) |>
+rd_props <- tibble(x = str_split(rd, "\n")[[1]]) |>
+  mutate(id = row_number()) |>
   extract(x, c("velo", "travel", "rest"), regex = ".* (\\d+) .* (\\d+) .* (\\d+) .*", convert = TRUE) |>
-  mutate(cycle_time = travel + rest) |>
+  mutate(cycle_time = travel + rest)
+
+rd_props |>
   mutate(
     n_cycle = time %/% cycle_time,
     partial_cycle = time %% cycle_time
@@ -26,3 +29,18 @@ tibble(x = str_split(rd, "\n")[[1]]) |>
     dist = n_cycle * travel * velo + partial_cycle_travel_time * velo
   ) |>
   pull(dist) |> max()
+
+rd_props |> inner_join(tibble(t = seq_len(time)), by = character()) |>
+  mutate(
+    n_cycle = t %/% cycle_time,
+    partial_cycle = t %% cycle_time
+  ) |>
+  mutate(partial_cycle_travel_time = pmin(partial_cycle, travel)) |>
+  mutate(
+    dist = n_cycle * travel * velo + partial_cycle_travel_time * velo
+  ) |>
+  group_by(t) |>
+  filter(dist == max(dist)) |>
+  ungroup() |>
+  count(id) |>
+  arrange(desc(n))
