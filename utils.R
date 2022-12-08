@@ -1,8 +1,8 @@
-read_as_grid <- function(input, col_sep = "") {
+read_as_grid <- function(input, col_sep = "", convert = TRUE) {
   tibble(value = input) %>%
-    separate_rows(value, sep = "\n") %>%
+    separate_rows(value, sep = "\n", convert = FALSE) %>%
     mutate(y = 1:n()) %>%
-    separate_rows(value, sep = col_sep) %>%
+    separate_rows(value, sep = col_sep, convert = convert) %>%
     filter(value != "") %>%
     group_by(y) %>%
     mutate(x = 1:n()) %>%
