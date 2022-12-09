@@ -34,8 +34,9 @@ knot_steps <- list(
   "2;-2" = c(1, -1),
   "-2;2" = c(-1, 1)
 )
-
-knot_positions <- lapply(1:10, \(i) c(0, 0))
+# for part 1, change n_knot to 1
+n_knot <- 9
+knot_positions <- lapply(seq_len(n_knot + 1), \(i) c(0, 0))
 tail_visited <- list("0;0" = TRUE)
 
 for (step in steps) {
@@ -43,7 +44,7 @@ for (step in steps) {
   for (i in seq_len(step[2])) {
     knot_positions[[1]] <- knot_positions[[1]] + head_step
 
-    for (knot_idx in 2:10) {
+    for (knot_idx in 2:(n_knot + 1)) {
       position_difference <- paste(
         knot_positions[[knot_idx - 1]] - knot_positions[[knot_idx]],
         collapse = ";"
@@ -52,7 +53,7 @@ for (step in steps) {
         knot_positions[[knot_idx]] <- knot_positions[[knot_idx]] + knot_steps[[position_difference]]
       }
     }
-    tail_visited[[paste(knot_positions[[10]], collapse = ";")]] <- TRUE
+    tail_visited[[paste(knot_positions[[n_knot + 1]], collapse = ";")]] <- TRUE
   }
 }
 
