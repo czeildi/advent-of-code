@@ -24,7 +24,7 @@ parse_monkey <- function(monkey) {
 
 monkey_states <- lapply(monkeys, parse_monkey)
 
-mod <- Reduce(`*`, sapply(monkey_states, function(ms) ms$test))
+mod <- sapply(monkey_states, function(ms) ms$test) |> prod()
 
 n_rounds <- c(20, 10000)
 worry_managers <- list(
@@ -42,9 +42,8 @@ for (round in seq_len(n_rounds[part_idx])) {
       worry <- eval(parse(text = monkey_states[[monkey_id]]$op))
       managed_worry <- worry_managers[[part_idx]](worry)
 
-      passed_condition <- managed_worry %% monkey_states[[monkey_id]]$test == 0
       next_monkey <- if_else(
-        passed_condition,
+        managed_worry %% monkey_states[[monkey_id]]$test == 0,
         monkey_states[[monkey_id]]$pass,
         monkey_states[[monkey_id]]$fail
       )
@@ -55,4 +54,4 @@ for (round in seq_len(n_rounds[part_idx])) {
 }
 
 sapply(monkey_states, \(ms) ms$inspected) |>
-  sort(decreasing = TRUE) |> head(2) |> Reduce(`*`, x = _)
+  sort(decreasing = TRUE) |> head(2) |> prod()
