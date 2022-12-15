@@ -1,6 +1,5 @@
 library(tidyverse)
 library(glue)
-library(memoise)
 options(scipen = 999)
 library(ivs)
 
@@ -50,11 +49,11 @@ res <- invisible(lapply(0:grid_max, function(grid_y) {
   right <- if_else(manh - dist_y < 0, NA_real_, pmin(xs + (manh - dist_y) + 1, grid_max + 1))
   valid <- !is.na(left) & !is.na(right) & left < right
 
-  ui <- iv_groups(iv(left[valid], right[valid]))
+  union_of_intervals <- iv_groups(iv(left[valid], right[valid]))
 
-  if (length(ui) == 1) return(NULL)
+  if (length(union_of_intervals) == 1) return(NULL)
 
-  distress <- iv_start(iv_complement(ui))
+  distress <- iv_start(iv_complement(union_of_intervals))
   result <- distress * 4000000 + grid_y
   cat("\n\nResult:", result, "\n\n")
   result
