@@ -6,7 +6,7 @@ options(scipen = 999)
 
 year <- "2022"
 day <- "16"
-input_file <- glue("solutions_{year}/day{day}_input.txt")
+input_file <- glue("solutions_{year}/day{day}_input_sample.txt")
 
 input <- tibble(x = read_lines(input_file))
 
@@ -31,15 +31,14 @@ g <- tbl_graph(
   edges = tunnels
 )
 
-pairwise_distances <- do.call(rbind, lapply(important_valves$idx, function(to) {
+pairwise_distances <- do.call(rbind, lapply(important_valves$idx, function(to_id) {
   g |>
     activate(nodes) |>
-    mutate(dist = node_distance_to(to)) |>
+    mutate(dist = node_distance_to(to_id)) |>
     activate(nodes) |>
     as_tibble() |>
-    mutate(to_id = to)
+    mutate(to_id = to_id)
 })) |>
-  filter(node_id %in% important_valves$idx | name == "AA") |>
   select(from_id = node_id, from_name = name, dist, to_id) |>
   inner_join(select(valves, idx, to_name = name), by = c("to_id" = "idx"))
 
@@ -50,6 +49,7 @@ distances <- pairwise_distances |>
 
 valve_flows <- select(important_valves, name, flow) |> deframe()
 
+# part 1
 get_max_flow <- function(
   current_position,
   closed_valves,
@@ -57,20 +57,22 @@ get_max_flow <- function(
 ) {
   if (remaining_time <= 0) return(0)
   if (length(closed_valves) == 0) return(0)
-  possible_next_steps <- distances[[current_position]][closed_valves]
 
-  sapply(names(possible_next_steps), function(valve_name) {
-    distance <- possible_next_steps[[valve_name]]
-    remaining_time_after_opening_valve <- max(remaining_time - distance - 1, 0)
-    flow <- valve_flows[[valve_name]]
+  distances_to_closed_valves <- distances[[current_position]][closed_valves]
 
-    flow_gain_from_rest <- m_get_max_flow(
-      valve_name,
-      setdiff(closed_valves, valve_name),
-      remaining_time_after_opening_valve
+  sapply(names(distances_to_closed_valves), function(next_valve_to_open) {
+    remaining_time_after_opening_valve <- max(
+      remaining_time - distances_to_closed_valves[[next_valve_to_open]] - 1,
+      0
     )
 
-    return(flow * remaining_time_after_opening_valve + flow_gain_from_rest)
+    gain_from_next <- remaining_time_after_opening_valve * valve_flows[[next_valve_to_open]]
+    flow_gain_from_rest <- m_get_max_flow(
+      next_valve_to_open,
+      setdiff(closed_valves, next_valve_to_open),
+      remaining_time_after_opening_valve
+    )
+    return(gain_from_next + flow_gain_from_rest)
   }) |> max()
 }
 
