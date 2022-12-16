@@ -6,7 +6,7 @@ options(scipen = 999)
 
 year <- "2022"
 day <- "16"
-input_file <- glue("solutions_{year}/day{day}_input_sample.txt")
+input_file <- glue("solutions_{year}/day{day}_input.txt")
 
 input <- tibble(x = read_lines(input_file))
 
@@ -156,7 +156,8 @@ get_max_flow_2 <- function(
   total_flow
 }
 
-m_get_max_flow_2 <- memoise(get_max_flow_2)
+mf <- memoise(f, cache = cm)
+m_get_max_flow_2 <- memoise(get_max_flow_2, cache = cachem::cache_mem(max_size = 5000 * 1024^2))
 
 system.time(
 max_flow <- m_get_max_flow_2("AA", "AA", names(valve_flows), 26)
