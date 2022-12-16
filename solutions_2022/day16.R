@@ -6,7 +6,7 @@ options(scipen = 999)
 
 year <- "2022"
 day <- "16"
-input_file <- glue("solutions_{year}/day{day}_input.txt")
+input_file <- glue("solutions_{year}/day{day}_input_sample.txt")
 
 input <- tibble(x = read_lines(input_file))
 
@@ -78,5 +78,87 @@ m_get_max_flow <- memoise(get_max_flow)
 
 system.time(
 max_flow <- m_get_max_flow("AA", names(valve_flows), 30)
+)
+max_flow
+
+
+# part 2
+
+neighbors <- select(parsed, name, neighbor) |>
+  separate_rows(neighbor) |>
+  inner_join(valves, by = c("neighbor" = "name")) |>
+  group_by(name) |>
+  summarize(neighbors = list(neighbor)) |>
+  deframe()
+
+get_max_flow_2 <- function(
+  current_person,
+  current_elephant,
+  closed_valves,
+  remaining_time
+) {
+  if (remaining_time <= 0) return(0)
+  if (length(closed_valves) == 0) return(0)
+
+  total_flow <- 0
+  # both move
+  for (next_person in neighbors[[current_person]]) {
+    for (next_elephant in neighbors[[current_elephant]]) {
+      gain_from_rest <- m_get_max_flow_2(
+        next_person,
+        next_elephant,
+        closed_valves,
+        remaining_time - 1
+      )
+      total_flow <- max(total_flow, gain_from_rest)
+    }
+  }
+  # person moves, elephant opens
+  if (current_elephant %in% closed_valves) {
+    gain_from_current <- max(remaining_time - 1, 0) * valve_flows[[current_elephant]]
+    for (next_person in neighbors[[current_person]]) {
+      gain_from_rest <- m_get_max_flow_2(
+        next_person,
+        current_elephant,
+        setdiff(closed_valves, current_elephant),
+        remaining_time - 1
+      )
+      total_flow <- max(total_flow, gain_from_rest + gain_from_current)
+    }
+  }
+
+  # person opens, elephant moves
+  if (current_person %in% closed_valves) {
+    gain_from_current <- max(remaining_time - 1, 0) * valve_flows[[current_person]]
+    for (next_elephant in neighbors[[current_elephant]]) {
+      gain_from_rest <- m_get_max_flow_2(
+        current_person,
+        next_elephant,
+        setdiff(closed_valves, current_person),
+        remaining_time - 1
+      )
+      total_flow <- max(total_flow, gain_from_rest + gain_from_current)
+    }
+  }
+  # both open (unless they are both at the same position)
+  if (current_person %in% closed_valves && current_elephant %in% closed_valves && current_person != current_elephant) {
+    gain_from_current_e <- max(remaining_time - 1, 0) * valve_flows[[current_elephant]]
+    gain_from_current_p <- max(remaining_time - 1, 0) * valve_flows[[current_person]]
+    gain_from_rest <- m_get_max_flow_2(
+      current_person,
+      current_elephant,
+      setdiff(closed_valves, c(current_person, current_elephant)),
+      remaining_time - 1
+    )
+    total_flow <- max(total_flow, gain_from_rest + gain_from_current_e + gain_from_current_p)
+  }
+
+  total_flow
+}
+
+m_get_max_flow_2 <- memoise(get_max_flow_2)
+
+system.time(
+max_flow <- m_get_max_flow_2("AA", "AA", names(valve_flows), 26)
 )
 max_flow
