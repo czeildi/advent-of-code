@@ -6,7 +6,7 @@ options(scipen = 999)
 
 year <- "2022"
 day <- "16"
-input_file <- glue("solutions_{year}/day{day}_input_sample.txt")
+input_file <- glue("solutions_{year}/day{day}_input.txt")
 
 input <- tibble(x = read_lines(input_file))
 
@@ -31,7 +31,7 @@ g <- tbl_graph(
   edges = tunnels
 )
 
-pairwise_distances <- do.call(rbind, lapply(important_valves$idx, function(to_id) {
+pairwise_distances <- do.call(rbind, lapply(valves$idx, function(to_id) {
   g |>
     activate(nodes) |>
     mutate(dist = node_distance_to(to_id)) |>
@@ -58,11 +58,9 @@ get_max_flow <- function(
   if (remaining_time <= 0) return(0)
   if (length(closed_valves) == 0) return(0)
 
-  distances_to_closed_valves <- distances[[current_position]][closed_valves]
-
-  sapply(names(distances_to_closed_valves), function(next_valve_to_open) {
+  sapply(closed_valves, function(next_valve_to_open) {
     remaining_time_after_opening_valve <- max(
-      remaining_time - distances_to_closed_valves[[next_valve_to_open]] - 1,
+      remaining_time - distances[[current_position]][[next_valve_to_open]] - 1,
       0
     )
 
@@ -78,4 +76,7 @@ get_max_flow <- function(
 
 m_get_max_flow <- memoise(get_max_flow)
 
-m_get_max_flow("AA", names(valve_flows), 30)
+system.time(
+max_flow <- m_get_max_flow("AA", names(valve_flows), 30)
+)
+max_flow
