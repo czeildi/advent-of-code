@@ -5,13 +5,13 @@ library(ggplot2)
 
 year <- "2022"
 day <- "17"
-input_file <- glue("solutions_{year}/day{day}_input_sample.txt")
+input_file <- glue("solutions_{year}/day{day}_input.txt")
 
 wind <- if_else(head(str_split(read_file(input_file), "")[[1]], -1) == "<", -1, 1)
 wind_size <- length(wind)
 n_tetris <- 2022
-estimated_cave_height <- (n_tetris %/% 5 + 1) * 13 + 100
-cave <- matrix(integer(7 * estimated_cave_height), ncol = 7)
+# heuristic: we do not need to keep track of more than 100 rows
+cave <- matrix(integer(7 * 100), ncol = 7)
 cave[1, ] <- 2
 
 tetrises <- list(
@@ -110,19 +110,26 @@ fallen_tetris_count <- 0
 tetris_idx <- 1
 wind_idx <- 1
 current_tetris <- get_new_tetris(cave, tetris_idx)
-# print_cave(fill_cave_with_tetris(cave, current_tetris))
+max_heights <- integer(n_tetris)
+result <- -1 # floor does not count
 
+system.time({
 repeat {
   current_tetris <- move_with_wind(cave, current_tetris, wind[wind_idx])
-  # print_cave(fill_cave_with_tetris(cave, current_tetris))
   wind_idx <- wind_idx + 1
   if (wind_idx == wind_size + 1) wind_idx <- 1
 
   is_fallen <- is_blocked_from_below(current_tetris)
   if (is_fallen) {
     cave <- fill_cave_with_tetris(cave, current_tetris)
-    # print_cave(cave)
     fallen_tetris_count <- fallen_tetris_count + 1
+    # heuristic that only the top few rows count
+    if (highest_rock_position(cave) >= 75) {
+      result <- result + 25
+      cave <- cave[-1:-25, ]
+      cave[1, ] <- 2
+      cave <- rbind(cave, matrix(integer(7 * 25), ncol = 7))
+    }
     if (fallen_tetris_count == n_tetris) break
     tetris_idx <- tetris_idx + 1
     if (tetris_idx == 6) tetris_idx <- 1
@@ -130,8 +137,8 @@ repeat {
     # print_cave(fill_cave_with_tetris(cave, current_tetris))
   } else {
     current_tetris <- move_down(current_tetris)
-    # print_cave(fill_cave_with_tetris(cave, current_tetris))
   }
 }
+})
 
-highest_rock_position(cave) - 1
+result + highest_rock_position(cave)
