@@ -144,6 +144,11 @@ repeat {
 }
 })
 
+# part 1: run with n_tetris = 2022
+tail(max_heights, 1)
+
+# part 2
+
 # empirical search for a repeating period in the growth pattern
 height_diffs <- max_heights - lag(max_heights)
 initial_slice <- 999
