@@ -156,9 +156,10 @@ period_search_space <- height_diffs[(initial_slice + 1):n_tetris]
 period_length <- NULL
 # another heuristic, hope the period is shorter...
 for (i in 1:1000) {
-  biff0 <- which(cucc == 0)
-  if (length(unique(biff0 - lag(biff0, i))) == 2) {
-    period_length <- unique(biff0 - lag(biff0, i))[2]
+  zero_positions <- which(period_search_space == 0)
+  # if besides first NA value, only 1 unique value, we hopefully found a period
+  if (length(unique(zero_positions - lag(zero_positions, i))) == 2) {
+    period_length <- unique(zero_positions - lag(zero_positions, i))[2]
     break
   }
 }
