@@ -9,10 +9,11 @@ input_file <- glue("solutions_{year}/day{day}_input.txt")
 
 wind <- if_else(head(str_split(read_file(input_file), "")[[1]], -1) == "<", -1, 1)
 wind_size <- length(wind)
-n_tetris <- 2022
+# heuristical number
+n_tetris <- 40000
 # heuristic: we do not need to keep track of more than 100 rows
-cave <- matrix(integer(7 * 100), ncol = 7)
-cave[1, ] <- 2
+cave <- matrix(logical(7 * 100), ncol = 7)
+cave[1, ] <- TRUE
 
 tetrises <- list(
 #' ####
@@ -53,7 +54,7 @@ tetrises <- list(
 print_cave <- function(cave) {
   rows <- apply(
     cave, 1,
-    \(x) paste(if_else(x == 2, "W", if_else(x == 1, "@", "-")), collapse = "")
+    \(x) paste(if_else(if_else(x == 1, "@", "-")), collapse = "")
   )
   cat(paste(rev(rows), collapse = "\n"), "\n\n")
 }
@@ -101,7 +102,7 @@ get_new_tetris <- function(cave, tetris_idx) {
 
 fill_cave_with_tetris <- function(cave, tetris) {
   for (i in seq_len(nrow(tetris))) {
-    cave[tetris[i, 1], tetris[i, 2]] <- 1
+    cave[tetris[i, 1], tetris[i, 2]] <- TRUE
   }
   cave
 }
@@ -124,11 +125,13 @@ repeat {
     cave <- fill_cave_with_tetris(cave, current_tetris)
     fallen_tetris_count <- fallen_tetris_count + 1
     # heuristic that only the top few rows count
-    if (highest_rock_position(cave) >= 75) {
+    highest <- highest_rock_position(cave)
+    max_heights[fallen_tetris_count] <- result + highest
+    if (highest >= 75) {
       result <- result + 25
       cave <- cave[-1:-25, ]
-      cave[1, ] <- 2
-      cave <- rbind(cave, matrix(integer(7 * 25), ncol = 7))
+      cave[1, ] <- TRUE
+      cave <- rbind(cave, matrix(logical(7 * 25), ncol = 7))
     }
     if (fallen_tetris_count == n_tetris) break
     tetris_idx <- tetris_idx + 1
@@ -141,4 +144,24 @@ repeat {
 }
 })
 
-result + highest_rock_position(cave)
+# empirical search for a repeating period in the growth pattern
+height_diffs <- max_heights - lag(max_heights)
+initial_slice <- 999
+period_search_space <- height_diffs[(initial_slice + 1):n_tetris]
+period_length <- NULL
+# another heuristic, hope the period is shorter...
+for (i in 1:1000) {
+  biff0 <- which(cucc == 0)
+  if (length(unique(biff0 - lag(biff0, i))) == 2) {
+    period_length <- unique(biff0 - lag(biff0, i))[2]
+    break
+  }
+}
+
+print(period_length)
+n_cycle <- (10^12 - initial_slice) %/% period_length
+remainder <- (10^12 - initial_slice) %% period_length
+
+sum(period_search_space[1:period_length]) * n_cycle +
+  sum(period_search_space[1:remainder]) +
+  max_heights[initial_slice]
