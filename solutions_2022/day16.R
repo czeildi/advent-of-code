@@ -77,89 +77,100 @@ get_max_flow <- function(
 
 m_get_max_flow <- memoise(get_max_flow)
 
-system.time(
-max_flow <- m_get_max_flow("AA", names(valve_flows), 30)
-)
-max_flow
+# system.time(
+# max_flow <- m_get_max_flow("AA", names(valve_flows), 30)
+# )
+# max_flow
 
 
 # part 2
-paths_to_important_valves <- lapply(seq_len(nrow(valves)), function(from_id) {
-  lapply(important_valves$idx, function(to_id) {
-    names(igraph::shortest_paths(g, from_id, to_id)$vpath[[1]])
-  }) |>
-    setNames(important_valves$name)
-}) |>
-  setNames(valves$name)
+paths_to_valves <- lapply(seq_len(nrow(valves)), function(from_id) {
+  lapply(valves$idx, function(to_id) {
+    as.integer(igraph::shortest_paths(g, from_id, to_id)$vpath[[1]])
+  })
+})
+
+valve_flows <- valves$flow
 
 
 get_max_flow_2 <- function(
-  current_person,
-  current_elephant,
+  current_positions,
   closed_valves,
   remaining_time
 ) {
   if (remaining_time <= 0) return(0)
   if (length(closed_valves) == 0) return(0)
 
-  total_flow <- 0
-
-  for (next_person_candidate in closed_valves) {
-    for (next_elephant_candidate in closed_valves) {
-      dist_person <- length(paths_to_important_valves[[current_person]][[next_person_candidate]]) - 1
-      dist_elephant <- length(paths_to_important_valves[[current_elephant]][[next_elephant_candidate]]) - 1
+  sapply(closed_valves, function(next_person_candidate) {
+    sapply(closed_valves, function(next_elephant_candidate) {
+      dist_person <- length(paths_to_valves[[current_positions[1]]][[next_person_candidate]]) - 1
+      dist_elephant <- length(paths_to_valves[[current_positions[2]]][[next_elephant_candidate]]) - 1
       if (dist_person < dist_elephant) {
         remaining_time_after_opening_valve <- max(
           remaining_time - dist_person - 1,
           0
         )
-        gain_from_next <- remaining_time_after_opening_valve * valve_flows[[next_person_candidate]]
+        gain_from_next <- remaining_time_after_opening_valve * valve_flows[next_person_candidate]
         flow_gain_from_rest <- flow_gain_from_rest <- m_get_max_flow_2(
-          next_person_candidate,
-          paths_to_important_valves[[current_elephant]][[next_elephant_candidate]][dist_person + 2],
+          sort(c(
+            next_person_candidate,
+            paths_to_valves[[current_positions[2]]][[next_elephant_candidate]][dist_person + 2]
+          )),
           setdiff(closed_valves, next_person_candidate),
           remaining_time_after_opening_valve
         )
-        total_flow <- max(total_flow, gain_from_next + flow_gain_from_rest)
+        return(gain_from_next + flow_gain_from_rest)
       } else if (dist_elephant < dist_person) {
         remaining_time_after_opening_valve <- max(
           remaining_time - dist_elephant - 1,
           0
         )
-        gain_from_next <- remaining_time_after_opening_valve * valve_flows[[next_elephant_candidate]]
+        gain_from_next <- remaining_time_after_opening_valve * valve_flows[next_elephant_candidate]
         flow_gain_from_rest <- flow_gain_from_rest <- m_get_max_flow_2(
-          paths_to_important_valves[[current_person]][[next_person_candidate]][dist_elephant + 2],
-          next_elephant_candidate,
+          sort(c(
+          paths_to_valves[[current_positions[1]]][[next_person_candidate]][dist_elephant + 2],
+          next_elephant_candidate
+          )),
           setdiff(closed_valves, next_elephant_candidate),
           remaining_time_after_opening_valve
         )
-        total_flow <- max(total_flow, gain_from_next + flow_gain_from_rest)
+        return(gain_from_next + flow_gain_from_rest)
       } else {
         remaining_time_after_opening_valve <- max(
           remaining_time - dist_person - 1,
           0
         )
-        gain_from_next <- remaining_time_after_opening_valve * (valve_flows[[next_person_candidate]] + valve_flows[[next_elephant_candidate]])
+        gain_from_next <- remaining_time_after_opening_valve * (valve_flows[next_person_candidate] + valve_flows[next_elephant_candidate])
         if (next_elephant_candidate == next_person_candidate) {
           gain_from_next <- gain_from_next / 2
         }
         flow_gain_from_rest <- m_get_max_flow_2(
-          next_person_candidate,
-          next_elephant_candidate,
+          sort(c(next_person_candidate, next_elephant_candidate)),
           setdiff(closed_valves, c(next_person_candidate, next_elephant_candidate)),
           remaining_time_after_opening_valve
         )
-        total_flow <- max(total_flow, gain_from_next + flow_gain_from_rest)
+        return(gain_from_next + flow_gain_from_rest)
       }
-    }
-  }
-
-  total_flow
+    }) |> max()
+  }) |> max()
 }
 
 m_get_max_flow_2 <- memoise(get_max_flow_2, cache = cachem::cache_mem(max_size = 5000 * 1024^2))
 
-system.time(
-max_flow <- m_get_max_flow_2("AA", "AA", names(valve_flows), 10)
-)
-max_flow
+Rprof()
+m_get_max_flow_2(c(1, 1), important_valves$idx, 7)
+Rprof(NULL)
+summaryRprof()
+
+for (max_time in 1:26) {
+  times <- system.time({
+    cat(as.character(Sys.time()), "\n")
+    max_flow <- m_get_max_flow_2(c(1, 1), important_valves$idx, max_time)
+  })
+  cat(
+    str_pad(max_time, 2), ":", str_pad(max_flow, 6),
+    " Ran for ", times[1], "\n",
+    file = "./day16result.txt", append = TRUE
+  )
+  max_flow
+}
