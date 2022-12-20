@@ -7,6 +7,8 @@ day <- "20"
 input_file <- glue("solutions_{year}/day{day}_input.txt")
 
 input <- scan(input_file, sep = "\n")
+# next line only for part 2
+input <- input * 811589153
 n <- length(input)
 
 new_pos <- function(old_pos, move, n) {
@@ -64,8 +66,11 @@ shuffle <- function(idx_to_move) {
   # print_order()
 }
 
-for (i in seq_len(n)) {
-  shuffle(i)
+# 10x loop only for part 2
+for (x in 1:10) {
+  for (i in seq_len(n)) {
+    shuffle(i)
+  }
 }
 
 final <- tibble(input, pos = .globals$current_positions) |>
