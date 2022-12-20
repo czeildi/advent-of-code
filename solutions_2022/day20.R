@@ -31,6 +31,7 @@ stopifnot(new_pos(3, -1, 7) == 2)
 stopifnot(new_pos(3, -2, 7) == 7)
 stopifnot(new_pos(3, -11, 7) == 4)
 
+# for debugging of sample case
 print_order <- function() {
   tibble(input, pos = .globals$current_positions) |>
     arrange(pos) |> pull(input) |>
@@ -41,7 +42,7 @@ print_order <- function() {
 parent.env(.globals) <- emptyenv()
 .globals$current_positions <- seq_len(n)
 
-shuffle <- function(idx_to_move) {
+move_element <- function(idx_to_move) {
   value_to_move <- input[idx_to_move]
   move_from <- .globals$current_positions[idx_to_move]
 
@@ -63,13 +64,16 @@ shuffle <- function(idx_to_move) {
     )
     .globals$current_positions[idx_to_move] <- move_to
   }
-  # print_order()
+  # only debug for small sample input
+  if (n == 7) {
+    print_order()
+  }
 }
 
 # 10x loop only for part 2
 for (x in 1:10) {
   for (i in seq_len(n)) {
-    shuffle(i)
+    move_element(i)
   }
 }
 
