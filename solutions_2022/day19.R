@@ -33,7 +33,7 @@ res <- 0
 #  - every variable has value 0 or 1
 #  - at each minute for each resource type after buying the robot we planned for that minute
 #    our remaining budget should be non-negative (produced until now - previously spent on buying robots)
-#  - at each minute the some of bought robots is at most 1
+#  - at each minute the sum of bought robots is at most 1
 
 # ore is 1st, clay is 2nd, obsidian is 3rd, geode is 4th resource type
 lapply(seq_along(blueprints), function(blueprint_id) {
