@@ -16,7 +16,7 @@ board_rows <- str_split(board, "\n")[[1]]
 board_height <- length(board_rows)
 board_width <- sapply(board_rows, nchar) |> max()
 
-board_matrix <- lapply(str_split(board, "\n")[[1]], function(line) {
+board_matrix <- lapply(board_rows, function(line) {
   prefix <- str_split(line, "")[[1]]
   row <- c(prefix, rep(" ", board_width - length(prefix)))
   row
@@ -69,6 +69,8 @@ repeat {
   if (board_matrix[y, x] == " ") x <- x + 1
   else break
 }
+
+# do the moves
 n_walk <- length(walks)
 for (i in seq_len(n_walk)) {
   # walk
