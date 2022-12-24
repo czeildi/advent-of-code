@@ -8,9 +8,9 @@ year <- "2022"
 day <- "24"
 input_file <- glue("solutions_{year}/day{day}_input.txt")
 
-# keep appropriate alternative
 input <- read_file(input_file)
 initial_map <- read_as_grid(input)
+
 width <- max(initial_map$x)
 height <- max(initial_map$y)
 
